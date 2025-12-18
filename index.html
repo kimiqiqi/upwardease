@@ -5,13 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UpwardEase</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Merriweather:wght@300;400;700;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
-        fontFamily: {
-          sans: ['Nunito', 'sans-serif'],
-        },
+        extend: {
+          colors: {
+            cream: '#FDFBF7',
+            eggplant: '#564A75',
+            'eggplant-dark': '#403657',
+            'accent-orange': '#E89159',
+            'accent-green': '#A6C48A',
+          },
+          fontFamily: {
+            sans: ['Nunito', 'sans-serif'],
+            serif: ['Merriweather', 'serif'],
+          },
+        }
       }
     }
   </script>
@@ -29,7 +40,7 @@
 }
 </script>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-cream text-slate-800 transition-colors duration-300">
   <div id="root"></div>
   <script type="module" src="index.tsx"></script>
 </body>
