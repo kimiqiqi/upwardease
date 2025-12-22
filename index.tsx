@@ -38,7 +38,10 @@ import {
   Check,
   Clock,
   AlertCircle,
-  FileText
+  FileText,
+  HelpCircle,
+  History,
+  Plus
 } from "lucide-react";
 
 // --- Constants & System Prompts ---
@@ -61,16 +64,16 @@ Keep it non-political, safe, and encouraging.`;
 
 // Added status, feedback, uploaderId, and likedBy for new functionality
 const INITIAL_VIDEOS = [
-  { id: 1, title: "How I organize my notes for Finals", author: "Sarah J.", uploaderId: "user-sarah", grade: "11th Grade", views: 120, category: "Study Tips", color: "bg-pink-100", likes: 45, likedBy: ["user-2"], comments: [], status: "approved", feedback: "" },
-  { id: 2, title: "Dealing with pre-exam anxiety", author: "Marcus T.", uploaderId: "user-marcus", grade: "College Freshman", views: 85, category: "Mental Health", color: "bg-blue-100", likes: 32, likedBy: ["user-1"], comments: [], status: "approved", feedback: "" },
-  { id: 3, title: "Pomodoro technique explained", author: "Emily R.", uploaderId: "user-emily", grade: "10th Grade", views: 230, category: "Productivity", color: "bg-amber-100", likes: 112, likedBy: [], comments: [], status: "approved", feedback: "" },
-  { id: 4, title: "My morning routine before school", author: "Alex K.", uploaderId: "user-123", grade: "12th Grade", views: 95, category: "Motivation", color: "bg-green-100", likes: 28, likedBy: [], comments: [], status: "approved", feedback: "" },
-  { id: 5, title: "Chemistry hacks that saved me", author: "Jordan P.", uploaderId: "user-jordan", grade: "College Sophomore", views: 310, category: "Exam Prep", color: "bg-purple-100", likes: 150, likedBy: [], comments: [], status: "approved", feedback: "" },
-  { id: 6, title: "It's okay to take a break", author: "Lisa M.", uploaderId: "user-lisa", grade: "8th Grade", views: 150, category: "Mental Health", color: "bg-teal-100", likes: 67, likedBy: [], comments: [], status: "approved", feedback: "" },
+  { id: 1, title: "How I organize my notes for Finals", author: "Sarah J.", uploaderId: "user-sarah", grade: "11th Grade", views: 120, category: "Study Tips", color: "bg-pink-100", likes: 45, likedBy: ["user-2"], comments: [], status: "approved", feedback: "", description: "Here is my method for organizing notes using color codes." },
+  { id: 2, title: "Dealing with pre-exam anxiety", author: "Marcus T.", uploaderId: "user-marcus", grade: "College Freshman", views: 85, category: "Mental Health", color: "bg-blue-100", likes: 32, likedBy: ["user-1"], comments: [], status: "approved", feedback: "", description: "Breathing exercises that help me before a big test." },
+  { id: 3, title: "Pomodoro technique explained", author: "Emily R.", uploaderId: "user-emily", grade: "10th Grade", views: 230, category: "Productivity", color: "bg-amber-100", likes: 112, likedBy: [], comments: [], status: "approved", feedback: "", description: "Stop procrastinating with this simple timer method." },
+  { id: 4, title: "My morning routine before school", author: "Alex K.", uploaderId: "user-123", grade: "12th Grade", views: 95, category: "Motivation", color: "bg-green-100", likes: 28, likedBy: [], comments: [], status: "approved", feedback: "", description: "Get ready with me! 6AM start." },
+  { id: 5, title: "Chemistry hacks that saved me", author: "Jordan P.", uploaderId: "user-jordan", grade: "College Sophomore", views: 310, category: "Exam Prep", color: "bg-purple-100", likes: 150, likedBy: [], comments: [], status: "approved", feedback: "", description: "Memorization tricks for the periodic table." },
+  { id: 6, title: "It's okay to take a break", author: "Lisa M.", uploaderId: "user-lisa", grade: "8th Grade", views: 150, category: "Mental Health", color: "bg-teal-100", likes: 67, likedBy: [], comments: [], status: "approved", feedback: "", description: "Reminding everyone that rest is productive too." },
   // A pending video for demo purposes
-  { id: 7, title: "Why I almost quit", author: "New User", uploaderId: "user-new", grade: "9th Grade", views: 0, category: "Mental Health", color: "bg-red-100", likes: 0, likedBy: [], comments: [], status: "pending", feedback: "" },
+  { id: 7, title: "Why I almost quit", author: "New User", uploaderId: "user-new", grade: "9th Grade", views: 0, category: "Mental Health", color: "bg-red-100", likes: 0, likedBy: [], comments: [], status: "pending", feedback: "", description: "Sharing my story of burnout." },
   // A rejected video for demo purposes (owned by current user user-123)
-  { id: 8, title: "Rant about my teacher", author: "Alex K.", uploaderId: "user-123", grade: "12th Grade", views: 0, category: "Mental Health", color: "bg-gray-100", likes: 0, likedBy: [], comments: [], status: "rejected", feedback: "Content violates community guidelines: Specifically targeting individuals is not allowed." },
+  { id: 8, title: "Rant about my teacher", author: "Alex K.", uploaderId: "user-123", grade: "12th Grade", views: 0, category: "Mental Health", color: "bg-gray-100", likes: 0, likedBy: [], comments: [], status: "rejected", feedback: "Content violates community guidelines: Specifically targeting individuals is not allowed.", description: "Just need to vent about Mr. Smith." },
 ];
 
 const REVIEWS = [
@@ -651,7 +654,10 @@ const HomeView = ({ ai, navigate }: { ai: GoogleGenAI, navigate: (tab: any) => v
 const UploadView = ({ user, navigate, setVideos }: { user: UserType, navigate: any, setVideos: any }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Study Tips");
   const [uploading, setUploading] = useState(false);
+
+  const categories = ["Study Tips", "Mental Health", "Productivity", "Motivation", "Exam Prep"];
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -664,11 +670,12 @@ const UploadView = ({ user, navigate, setVideos }: { user: UserType, navigate: a
     const newVideo = {
       id: Date.now(),
       title,
+      description,
       author: user.name,
       uploaderId: user.id,
       grade: "Student", // Simplified for demo
       views: 0,
-      category: "Mental Health", // Simplified for demo
+      category: category,
       color: "bg-gray-100",
       likes: 0,
       likedBy: [],
@@ -716,6 +723,22 @@ const UploadView = ({ user, navigate, setVideos }: { user: UserType, navigate: a
              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-eggplant" placeholder="e.g. My study routine" />
           </div>
 
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Category (Tags)</label>
+            <div className="flex flex-wrap gap-2">
+                {categories.map(cat => (
+                <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(cat)}
+                    className={`px-4 py-2 rounded-full text-sm font-bold border transition-colors ${category === cat ? 'bg-eggplant text-white border-eggplant' : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+                >
+                    {cat}
+                </button>
+                ))}
+            </div>
+          </div>
+
           <div>
              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Description</label>
              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} required className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-eggplant" placeholder="Tell us about your video..." />
@@ -734,22 +757,44 @@ const UploadView = ({ user, navigate, setVideos }: { user: UserType, navigate: a
 
 const GalleryView = ({ videos, onVideoClick }: { videos: VideoType[], onVideoClick: (id: number) => void }) => {
   const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
   const categories = ["All", "Study Tips", "Mental Health", "Productivity", "Motivation", "Exam Prep"];
 
-  // Only show approved videos in the gallery
-  const approvedVideos = videos.filter(v => v.status === 'approved');
-  const filteredVideos = filter === "All" ? approvedVideos : approvedVideos.filter(v => v.category === filter);
+  // Filter logic
+  const filteredVideos = videos.filter(v => {
+    if (v.status !== 'approved') return false;
+    if (filter !== "All" && v.category !== filter) return false;
+    if (search) {
+        const lower = search.toLowerCase();
+        // Safe check for description as initial videos might not have it in all cases (though added in mock)
+        return v.title.toLowerCase().includes(lower) || (v as any).description?.toLowerCase().includes(lower) || v.author.toLowerCase().includes(lower);
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-8">
-       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">Community Gallery</h2>
-          <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+       <div className="flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+            <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">Community Gallery</h2>
+            <div className="w-full md:w-96 relative">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                 <input
+                    type="text"
+                    placeholder="Search videos by title or author..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-eggplant dark:text-white text-sm shadow-sm"
+                 />
+            </div>
+          </div>
+          
+          <div className="flex gap-2 overflow-x-auto w-full pb-2 md:pb-0 no-scrollbar">
              {categories.map(cat => (
                <button 
                  key={cat} 
                  onClick={() => setFilter(cat)}
-                 className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-colors ${filter === cat ? "bg-eggplant text-white" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
+                 className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-colors ${filter === cat ? "bg-eggplant text-white shadow-md" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-700"}`}
                >
                  {cat}
                </button>
@@ -757,28 +802,37 @@ const GalleryView = ({ videos, onVideoClick }: { videos: VideoType[], onVideoCli
           </div>
        </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVideos.map(video => (
-             <div key={video.id} onClick={() => onVideoClick(video.id)} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer group border border-slate-100 dark:border-slate-700">
-                <div className={`aspect-video ${video.color} relative flex items-center justify-center`}>
-                   <PlayCircle size={48} className="text-slate-900/50 group-hover:scale-110 transition-transform" />
-                   <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
-                      {video.views} views
-                   </div>
+       {filteredVideos.length === 0 ? (
+         <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 border-dashed">
+            <Search className="mx-auto text-slate-300 mb-4" size={48} />
+            <h3 className="text-lg font-bold text-slate-600 dark:text-slate-300">No videos found</h3>
+            <p className="text-slate-400 text-sm">Try adjusting your search or filter.</p>
+         </div>
+       ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredVideos.map(video => (
+                <div key={video.id} onClick={() => onVideoClick(video.id)} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer group border border-slate-100 dark:border-slate-700 flex flex-col">
+                    <div className={`aspect-video ${video.color} relative flex items-center justify-center`}>
+                    <PlayCircle size={48} className="text-slate-900/50 group-hover:scale-110 transition-transform" />
+                    <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                        {video.views} views
+                    </div>
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold text-eggplant dark:text-teal-400 uppercase tracking-wide">{video.category}</span>
+                    </div>
+                    <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-1">{video.title}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 flex-1">{video.description}</p>
+                    <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <span className="font-bold">{video.author}</span>
+                        <span>{video.grade}</span>
+                    </div>
+                    </div>
                 </div>
-                <div className="p-5">
-                   <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-bold text-eggplant dark:text-teal-400 uppercase tracking-wide">{video.category}</span>
-                   </div>
-                   <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-1 line-clamp-1">{video.title}</h3>
-                   <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 mt-4">
-                      <span>{video.author}</span>
-                      <span>{video.grade}</span>
-                   </div>
-                </div>
-             </div>
-          ))}
-       </div>
+            ))}
+        </div>
+       )}
     </div>
   );
 };
@@ -880,6 +934,11 @@ const VideoDetailView = ({
                       <Heart size={18} fill={isLiked ? "currentColor" : "none"} /> {video.likes} Likes
                    </button>
                 </div>
+                {video.description && (
+                    <p className="mt-4 text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                        {video.description}
+                    </p>
+                )}
              </div>
 
              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
@@ -934,7 +993,7 @@ const VideoDetailView = ({
 
 // --- Profile View ---
 
-const ProfileView = ({ user, videos, starredVideoIds, historyVideoIds, onVideoClick }: { user: UserType, videos: VideoType[], starredVideoIds: number[], historyVideoIds: number[], onVideoClick: (id: number) => void }) => {
+const ProfileView = ({ user, videos, starredVideoIds, historyVideoIds, onVideoClick, navigate }: { user: UserType, videos: VideoType[], starredVideoIds: number[], historyVideoIds: number[], onVideoClick: (id: number) => void, navigate: any }) => {
     const [tab, setTab] = useState<"uploads" | "favorites" | "history">("uploads");
 
     if (!user) return null;
@@ -981,14 +1040,25 @@ const ProfileView = ({ user, videos, starredVideoIds, historyVideoIds, onVideoCl
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center gap-4 mb-8">
-                <div className="w-20 h-20 rounded-full bg-accent-green flex items-center justify-center text-white text-3xl font-serif font-bold">
-                    {user.name.charAt(0)}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-full bg-accent-green flex items-center justify-center text-white text-3xl font-serif font-bold">
+                        {user.name.charAt(0)}
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">My Page</h2>
+                        <p className="text-slate-500">{user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">My Page</h2>
-                    <p className="text-slate-500">{user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</p>
-                </div>
+                
+                {tab === 'uploads' && (
+                    <button 
+                        onClick={() => navigate("upload")}
+                        className="bg-white dark:bg-slate-700 text-eggplant dark:text-teal-300 border border-slate-200 dark:border-slate-600 px-6 py-3 rounded-full font-bold hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center gap-2 shadow-sm"
+                    >
+                        <Plus size={20} /> Share a New Story
+                    </button>
+                )}
             </div>
 
             <div className="border-b border-slate-200 dark:border-slate-700 flex gap-6">
@@ -1064,6 +1134,7 @@ const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: GoogleGenAI,
   const [checking, setChecking] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
+  const [adminTab, setAdminTab] = useState<'queue' | 'history'>('queue');
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -1103,6 +1174,7 @@ const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: GoogleGenAI,
   if (!user || user.role !== "admin") return null;
 
   const pendingVideos = videos.filter(v => v.status === 'pending');
+  const historyVideos = videos.filter(v => v.status === 'approved' || v.status === 'rejected');
 
   return (
     <div className="max-w-6xl mx-auto py-8">
@@ -1110,79 +1182,121 @@ const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: GoogleGenAI,
             <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white flex items-center gap-3">
                 <ShieldAlert className="text-eggplant dark:text-teal-300" /> Admin Dashboard
             </h2>
-            <span className="bg-eggplant text-white px-4 py-1 rounded-full text-xs font-bold uppercase">Volunteer Mode</span>
+            <div className="flex gap-4 items-center">
+                 <button 
+                    onClick={() => setAdminTab('queue')}
+                    className={`text-sm font-bold px-4 py-2 rounded-full transition-colors ${adminTab === 'queue' ? 'bg-eggplant text-white' : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300'}`}
+                 >
+                    Queue ({pendingVideos.length})
+                 </button>
+                 <button 
+                    onClick={() => setAdminTab('history')}
+                    className={`text-sm font-bold px-4 py-2 rounded-full transition-colors ${adminTab === 'history' ? 'bg-eggplant text-white' : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300'}`}
+                 >
+                    History
+                 </button>
+            </div>
        </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
-          {/* LEFT: PENDING REVIEWS */}
+          {/* LEFT: PENDING REVIEWS / HISTORY */}
           <div className="space-y-6">
             <h3 className="font-bold text-xl dark:text-white flex items-center gap-2">
-                <Clock className="text-yellow-500"/> Review Queue ({pendingVideos.length})
+                {adminTab === 'queue' ? <Clock className="text-yellow-500"/> : <History className="text-blue-500"/>}
+                {adminTab === 'queue' ? 'Review Queue' : 'Review History'}
             </h3>
             
-            {pendingVideos.length === 0 ? (
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
-                    <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500"/>
-                    <p>All caught up! No pending videos.</p>
-                </div>
-            ) : (
-                pendingVideos.map(video => (
-                    <div key={video.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                        <div className="flex gap-4 mb-4">
-                            <div className={`w-32 h-20 ${video.color} rounded-lg flex items-center justify-center shrink-0`}>
-                                <Video className="text-slate-400" />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-lg dark:text-white">{video.title}</h4>
-                                <p className="text-sm text-slate-500">by {video.author} • {video.grade}</p>
-                                <span className="inline-block mt-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded font-bold uppercase">Pending Review</span>
-                            </div>
-                        </div>
-
-                        {selectedReviewId === video.id ? (
-                            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
-                                <p className="text-sm font-bold mb-2 dark:text-white">Review Action:</p>
-                                <textarea 
-                                    className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 mb-3 text-sm dark:bg-slate-800 dark:text-white"
-                                    placeholder="Reason for rejection (required if rejecting)..."
-                                    value={rejectReason}
-                                    onChange={(e) => setRejectReason(e.target.value)}
-                                />
-                                <div className="flex gap-3">
-                                    <button 
-                                        onClick={() => handleVerdict(video.id, 'rejected')}
-                                        disabled={!rejectReason}
-                                        className="flex-1 bg-red-100 text-red-700 py-2 rounded-lg font-bold hover:bg-red-200 disabled:opacity-50 text-sm"
-                                    >
-                                        Reject Video
-                                    </button>
-                                    <button 
-                                        onClick={() => setSelectedReviewId(null)}
-                                        className="px-4 py-2 text-slate-500 font-bold hover:text-slate-700 text-sm"
-                                    >
-                                        Cancel
-                                    </button>
+            {adminTab === 'queue' ? (
+                pendingVideos.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
+                        <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500"/>
+                        <p>All caught up! No pending videos.</p>
+                    </div>
+                ) : (
+                    pendingVideos.map(video => (
+                        <div key={video.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <div className="flex gap-4 mb-4">
+                                <div className={`w-32 h-20 ${video.color} rounded-lg flex items-center justify-center shrink-0`}>
+                                    <Video className="text-slate-400" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-lg dark:text-white">{video.title}</h4>
+                                    {/* Anonymized user info */}
+                                    <p className="text-sm text-slate-500">by Anonymous Student</p>
+                                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">{video.description}</p>
+                                    <span className="inline-block mt-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded font-bold uppercase">Pending Review</span>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="flex gap-3">
-                                <button 
-                                    onClick={() => handleVerdict(video.id, 'approved')}
-                                    className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 text-sm flex items-center justify-center gap-2"
-                                >
-                                    <CheckCircle2 size={16} /> Approve
-                                </button>
-                                <button 
-                                    onClick={() => setSelectedReviewId(video.id)}
-                                    className="flex-1 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold hover:bg-red-100 text-sm flex items-center justify-center gap-2"
-                                >
-                                    <X size={16} /> Reject
-                                </button>
+
+                            {selectedReviewId === video.id ? (
+                                <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
+                                    <p className="text-sm font-bold mb-2 dark:text-white">Review Action:</p>
+                                    <textarea 
+                                        className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 mb-3 text-sm dark:bg-slate-800 dark:text-white"
+                                        placeholder="Reason for rejection (required if rejecting)..."
+                                        value={rejectReason}
+                                        onChange={(e) => setRejectReason(e.target.value)}
+                                    />
+                                    <div className="flex gap-3">
+                                        <button 
+                                            onClick={() => handleVerdict(video.id, 'rejected')}
+                                            disabled={!rejectReason}
+                                            className="flex-1 bg-red-100 text-red-700 py-2 rounded-lg font-bold hover:bg-red-200 disabled:opacity-50 text-sm"
+                                        >
+                                            Reject
+                                        </button>
+                                        <button 
+                                            onClick={() => setSelectedReviewId(null)}
+                                            className="px-4 py-2 text-slate-500 font-bold hover:text-slate-700 text-sm"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => handleVerdict(video.id, 'approved')}
+                                        className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 text-sm flex items-center justify-center gap-2"
+                                    >
+                                        <CheckCircle2 size={16} /> Approve
+                                    </button>
+                                    <button 
+                                        onClick={() => setSelectedReviewId(video.id)}
+                                        className="flex-1 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold hover:bg-red-100 text-sm flex items-center justify-center gap-2"
+                                    >
+                                        <X size={16} /> Reject
+                                    </button>
+                                    <button 
+                                        onClick={() => { setSelectedReviewId(null); /* Simple logic for now: just deselect/skip */ }}
+                                        className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2 rounded-lg font-bold hover:bg-slate-200 dark:hover:bg-slate-600 text-sm flex items-center justify-center gap-2"
+                                    >
+                                        <HelpCircle size={16} /> Not Sure
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )
+            ) : (
+                <div className="space-y-4">
+                     {historyVideos.length === 0 ? (
+                        <p className="text-slate-500">No review history.</p>
+                     ) : (
+                        historyVideos.map(video => (
+                            <div key={video.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center opacity-75">
+                                 <div>
+                                    <p className="font-bold text-slate-800 dark:text-white line-clamp-1">{video.title}</p>
+                                    <p className="text-xs text-slate-500">{video.author}</p>
+                                 </div>
+                                 <div className={`px-2 py-1 rounded text-xs font-bold uppercase ${video.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {video.status}
+                                 </div>
                             </div>
-                        )}
-                    </div>
-                ))
+                        ))
+                     )}
+                </div>
             )}
           </div>
 
@@ -1294,7 +1408,7 @@ const App = () => {
             <GalleryView videos={videos} onVideoClick={handleVideoClick} />;
       case "contact": return <ContactView />;
       case "admin": return <AdminView ai={ai} user={user} navigate={setActiveTab} videos={videos} setVideos={setVideos} />;
-      case "profile": return <ProfileView user={user} videos={videos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} />;
+      case "profile": return <ProfileView user={user} videos={videos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={setActiveTab} />;
       case "login": return <LoginView onLogin={handleLogin} navigate={setActiveTab} />;
       default: return <HomeView ai={ai} navigate={setActiveTab} />;
     }
