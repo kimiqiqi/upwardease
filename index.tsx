@@ -35,7 +35,10 @@ import {
   Quote,
   Star,
   Target,
-  Check
+  Check,
+  Clock,
+  AlertCircle,
+  FileText
 } from "lucide-react";
 
 // --- Constants & System Prompts ---
@@ -56,13 +59,18 @@ Keep it non-political, safe, and encouraging.`;
 
 // --- Mock Data ---
 
+// Added status, feedback, uploaderId, and likedBy for new functionality
 const INITIAL_VIDEOS = [
-  { id: 1, title: "How I organize my notes for Finals", author: "Sarah J.", grade: "11th Grade", views: 120, category: "Study Tips", color: "bg-pink-100", likes: 45, comments: [] },
-  { id: 2, title: "Dealing with pre-exam anxiety", author: "Marcus T.", grade: "College Freshman", views: 85, category: "Mental Health", color: "bg-blue-100", likes: 32, comments: [] },
-  { id: 3, title: "Pomodoro technique explained", author: "Emily R.", grade: "10th Grade", views: 230, category: "Productivity", color: "bg-amber-100", likes: 112, comments: [] },
-  { id: 4, title: "My morning routine before school", author: "Alex K.", grade: "12th Grade", views: 95, category: "Motivation", color: "bg-green-100", likes: 28, comments: [] },
-  { id: 5, title: "Chemistry hacks that saved me", author: "Jordan P.", grade: "College Sophomore", views: 310, category: "Exam Prep", color: "bg-purple-100", likes: 150, comments: [] },
-  { id: 6, title: "It's okay to take a break", author: "Lisa M.", grade: "8th Grade", views: 150, category: "Mental Health", color: "bg-teal-100", likes: 67, comments: [] },
+  { id: 1, title: "How I organize my notes for Finals", author: "Sarah J.", uploaderId: "user-sarah", grade: "11th Grade", views: 120, category: "Study Tips", color: "bg-pink-100", likes: 45, likedBy: ["user-2"], comments: [], status: "approved", feedback: "" },
+  { id: 2, title: "Dealing with pre-exam anxiety", author: "Marcus T.", uploaderId: "user-marcus", grade: "College Freshman", views: 85, category: "Mental Health", color: "bg-blue-100", likes: 32, likedBy: ["user-1"], comments: [], status: "approved", feedback: "" },
+  { id: 3, title: "Pomodoro technique explained", author: "Emily R.", uploaderId: "user-emily", grade: "10th Grade", views: 230, category: "Productivity", color: "bg-amber-100", likes: 112, likedBy: [], comments: [], status: "approved", feedback: "" },
+  { id: 4, title: "My morning routine before school", author: "Alex K.", uploaderId: "user-123", grade: "12th Grade", views: 95, category: "Motivation", color: "bg-green-100", likes: 28, likedBy: [], comments: [], status: "approved", feedback: "" },
+  { id: 5, title: "Chemistry hacks that saved me", author: "Jordan P.", uploaderId: "user-jordan", grade: "College Sophomore", views: 310, category: "Exam Prep", color: "bg-purple-100", likes: 150, likedBy: [], comments: [], status: "approved", feedback: "" },
+  { id: 6, title: "It's okay to take a break", author: "Lisa M.", uploaderId: "user-lisa", grade: "8th Grade", views: 150, category: "Mental Health", color: "bg-teal-100", likes: 67, likedBy: [], comments: [], status: "approved", feedback: "" },
+  // A pending video for demo purposes
+  { id: 7, title: "Why I almost quit", author: "New User", uploaderId: "user-new", grade: "9th Grade", views: 0, category: "Mental Health", color: "bg-red-100", likes: 0, likedBy: [], comments: [], status: "pending", feedback: "" },
+  // A rejected video for demo purposes (owned by current user user-123)
+  { id: 8, title: "Rant about my teacher", author: "Alex K.", uploaderId: "user-123", grade: "12th Grade", views: 0, category: "Mental Health", color: "bg-gray-100", likes: 0, likedBy: [], comments: [], status: "rejected", feedback: "Content violates community guidelines: Specifically targeting individuals is not allowed." },
 ];
 
 const REVIEWS = [
@@ -131,6 +139,8 @@ const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setDarkMode
             <NavItem id="gallery" label="Gallery" />
             <NavItem id="upload" label="Share Story" />
             <NavItem id="contact" label="Contact Us" />
+            {user && <NavItem id="profile" label="My Page" />}
+            {user && user.role === 'admin' && <NavItem id="admin" label="Admin Dashboard" />}
           </nav>
 
           {/* User & Theme Actions */}
@@ -145,7 +155,7 @@ const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setDarkMode
                   <p className={`text-sm font-bold ${darkMode ? "text-white" : "text-eggplant"}`}>{user.name}</p>
                   <p className="text-xs text-slate-500 uppercase">{user.role}</p>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-accent-green flex items-center justify-center text-white font-bold cursor-pointer" onClick={() => user.role === 'admin' && setActiveTab('admin')}>
+                <div className="w-8 h-8 rounded-full bg-accent-green flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setActiveTab('profile')}>
                    {user.name.charAt(0)}
                 </div>
                 <button onClick={onLogout} title="Log Out" className="text-slate-400 hover:text-red-500">
@@ -177,7 +187,8 @@ const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setDarkMode
             <NavItem id="gallery" label="Gallery" />
             <NavItem id="upload" label="Share Story" />
             <NavItem id="contact" label="Contact Us" />
-            <NavItem id="admin" label="Admin" />
+            {user && <NavItem id="profile" label="My Page" />}
+            {user && user.role === 'admin' && <NavItem id="admin" label="Admin Dashboard" />}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4 flex justify-between items-center">
                <button onClick={() => setDarkMode(!darkMode)} className="flex items-center gap-2 text-sm font-bold">
                   {darkMode ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}
@@ -245,7 +256,7 @@ const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "admin",
     }
 
     // Simulate login logic
-    const name = role === "student" ? (isRegistering ? "New Student" : "Alex Student") : "Staff Member";
+    const name = role === "student" ? (isRegistering ? "New Student" : "Alex Student") : "Admin Volunteer";
     onLogin(role, name);
   };
 
@@ -273,7 +284,7 @@ const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "admin",
             onClick={() => setRole("admin")}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${role === "admin" ? "bg-white dark:bg-slate-600 text-eggplant dark:text-teal-200 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}
           >
-            Admin
+            Admin / Volunteer
           </button>
         </div>
 
@@ -637,7 +648,7 @@ const HomeView = ({ ai, navigate }: { ai: GoogleGenAI, navigate: (tab: any) => v
 
 // --- Upload View ---
 
-const UploadView = ({ user, navigate }: { user: UserType, navigate: any }) => {
+const UploadView = ({ user, navigate, setVideos }: { user: UserType, navigate: any, setVideos: any }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -648,8 +659,27 @@ const UploadView = ({ user, navigate }: { user: UserType, navigate: any }) => {
     setUploading(true);
     // Simulate upload delay
     await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Add new pending video
+    const newVideo = {
+      id: Date.now(),
+      title,
+      author: user.name,
+      uploaderId: user.id,
+      grade: "Student", // Simplified for demo
+      views: 0,
+      category: "Mental Health", // Simplified for demo
+      color: "bg-gray-100",
+      likes: 0,
+      likedBy: [],
+      comments: [],
+      status: "pending",
+      feedback: ""
+    };
+    
+    setVideos((prev: any) => [...prev, newVideo]);
     setUploading(false);
-    navigate("gallery");
+    navigate("profile"); // Redirect to profile to see pending status
   };
 
   if (!user) {
@@ -669,6 +699,10 @@ const UploadView = ({ user, navigate }: { user: UserType, navigate: any }) => {
     <div className="max-w-2xl mx-auto py-8">
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-700">
         <h2 className="text-3xl font-serif font-bold text-eggplant dark:text-white mb-6">Share Your Story</h2>
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6 text-sm text-blue-800 flex gap-2">
+            <AlertCircle size={20} className="shrink-0" />
+            <p>All uploads are reviewed by our volunteer admins to ensure a safe environment. Your video will appear as "Pending" until approved.</p>
+        </div>
         <form onSubmit={handleUpload} className="space-y-6">
           <div className="border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-2xl p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
              <Upload size={48} className="text-slate-300 dark:text-slate-500 mb-4" />
@@ -688,7 +722,7 @@ const UploadView = ({ user, navigate }: { user: UserType, navigate: any }) => {
           </div>
 
           <button disabled={uploading} className="w-full bg-eggplant text-white py-4 rounded-xl font-bold hover:bg-eggplant-dark transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-            {uploading ? <><Loader2 className="animate-spin"/> Uploading...</> : "Publish Video"}
+            {uploading ? <><Loader2 className="animate-spin"/> Uploading...</> : "Submit for Review"}
           </button>
         </form>
       </div>
@@ -702,7 +736,9 @@ const GalleryView = ({ videos, onVideoClick }: { videos: VideoType[], onVideoCli
   const [filter, setFilter] = useState("All");
   const categories = ["All", "Study Tips", "Mental Health", "Productivity", "Motivation", "Exam Prep"];
 
-  const filteredVideos = filter === "All" ? videos : videos.filter(v => v.category === filter);
+  // Only show approved videos in the gallery
+  const approvedVideos = videos.filter(v => v.status === 'approved');
+  const filteredVideos = filter === "All" ? approvedVideos : approvedVideos.filter(v => v.category === filter);
 
   return (
     <div className="space-y-8">
@@ -749,17 +785,55 @@ const GalleryView = ({ videos, onVideoClick }: { videos: VideoType[], onVideoCli
 
 // --- Video Detail View ---
 
-const VideoDetailView = ({ video, user, navigate, setVideos }: { video: VideoType, user: UserType, navigate: any, setVideos: any }) => {
+const VideoDetailView = ({ 
+  video, 
+  user, 
+  navigate, 
+  setVideos, 
+  starredVideoIds, 
+  setStarredVideoIds 
+}: { 
+  video: VideoType, 
+  user: UserType, 
+  navigate: any, 
+  setVideos: any,
+  starredVideoIds: number[],
+  setStarredVideoIds: any
+}) => {
   const [comment, setComment] = useState("");
+  
+  const isLiked = user && video.likedBy?.includes(user.id);
+  const isStarred = starredVideoIds.includes(video.id);
 
   const handleLike = () => {
-    setVideos((prev: VideoType[]) => prev.map(v => v.id === video.id ? { ...v, likes: v.likes + 1 } : v));
+    if (!user) {
+        navigate("login");
+        return;
+    }
+    if (isLiked) return; // Prevent double like
+
+    setVideos((prev: VideoType[]) => prev.map(v => 
+        v.id === video.id 
+        ? { ...v, likes: v.likes + 1, likedBy: [...(v.likedBy || []), user.id] } 
+        : v
+    ));
+  };
+
+  const handleToggleStar = () => {
+      if (!user) {
+          navigate("login");
+          return;
+      }
+      if (isStarred) {
+          setStarredVideoIds((prev: number[]) => prev.filter(id => id !== video.id));
+      } else {
+          setStarredVideoIds((prev: number[]) => [...prev, video.id]);
+      }
   };
 
   const handlePostComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) return;
-    // Mock comment add
     setComment("");
   };
 
@@ -771,8 +845,16 @@ const VideoDetailView = ({ video, user, navigate, setVideos }: { video: VideoTyp
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-             <div className={`aspect-video ${video.color} rounded-3xl flex items-center justify-center shadow-lg`}>
+             <div className={`aspect-video ${video.color} rounded-3xl flex items-center justify-center shadow-lg relative`}>
                 <PlayCircle size={80} className="text-slate-900/50" />
+                {user && (
+                    <button 
+                        onClick={handleToggleStar}
+                        className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-md transition-colors ${isStarred ? "bg-yellow-400 text-white" : "bg-black/30 text-white hover:bg-black/50"}`}
+                    >
+                        <Star size={24} fill={isStarred ? "currentColor" : "none"} />
+                    </button>
+                )}
              </div>
              
              <div>
@@ -787,8 +869,15 @@ const VideoDetailView = ({ video, user, navigate, setVideos }: { video: VideoTyp
                          <p className="text-xs text-slate-500">{video.grade}</p>
                       </div>
                    </div>
-                   <button onClick={handleLike} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 px-4 py-2 rounded-full font-bold text-eggplant dark:text-white hover:bg-eggplant hover:text-white transition-colors">
-                      <Heart size={18} /> {video.likes} Likes
+                   <button 
+                    onClick={handleLike} 
+                    disabled={!!isLiked}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-colors ${
+                        isLiked 
+                        ? "bg-red-100 text-red-500 cursor-default" 
+                        : "bg-slate-100 dark:bg-slate-700 text-eggplant dark:text-white hover:bg-eggplant hover:text-white"
+                    }`}>
+                      <Heart size={18} fill={isLiked ? "currentColor" : "none"} /> {video.likes} Likes
                    </button>
                 </div>
              </div>
@@ -826,7 +915,7 @@ const VideoDetailView = ({ video, user, navigate, setVideos }: { video: VideoTyp
              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
                 <h3 className="font-bold text-lg mb-4 dark:text-white">Related Videos</h3>
                 <div className="space-y-4">
-                   {INITIAL_VIDEOS.filter(v => v.id !== video.id).slice(0, 3).map(v => (
+                   {INITIAL_VIDEOS.filter(v => v.id !== video.id && v.status === 'approved').slice(0, 3).map(v => (
                       <div key={v.id} className="flex gap-3 cursor-pointer group" onClick={() => navigate("gallery")}> 
                          <div className={`w-24 h-16 ${v.color} rounded-lg flex-shrink-0`}></div>
                          <div>
@@ -841,6 +930,93 @@ const VideoDetailView = ({ video, user, navigate, setVideos }: { video: VideoTyp
        </div>
     </div>
   );
+};
+
+// --- Profile View ---
+
+const ProfileView = ({ user, videos, starredVideoIds, historyVideoIds, onVideoClick }: { user: UserType, videos: VideoType[], starredVideoIds: number[], historyVideoIds: number[], onVideoClick: (id: number) => void }) => {
+    const [tab, setTab] = useState<"uploads" | "favorites" | "history">("uploads");
+
+    if (!user) return null;
+
+    const myUploads = videos.filter(v => v.uploaderId === user.id);
+    const myFavorites = videos.filter(v => starredVideoIds.includes(v.id));
+    const myHistory = videos.filter(v => historyVideoIds.includes(v.id));
+
+    const VideoList = ({ items, showStatus }: { items: VideoType[], showStatus?: boolean }) => {
+        if (items.length === 0) return <div className="text-center py-12 text-slate-500">No videos found.</div>;
+        
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {items.map(video => (
+                    <div key={video.id} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
+                        <div onClick={() => video.status === 'approved' && onVideoClick(video.id)} className={`aspect-video ${video.color} relative flex items-center justify-center ${video.status === 'approved' ? 'cursor-pointer' : 'opacity-75'}`}>
+                            <PlayCircle size={48} className="text-slate-900/50" />
+                            {showStatus && (
+                                <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold uppercase ${
+                                    video.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                    video.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                    'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                    {video.status}
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col">
+                            <h3 className="font-bold text-slate-900 dark:text-white mb-1 line-clamp-1">{video.title}</h3>
+                            <p className="text-xs text-slate-500">{video.views} views</p>
+                            
+                            {showStatus && video.status === 'rejected' && video.feedback && (
+                                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900 text-xs">
+                                    <p className="font-bold text-red-800 dark:text-red-400 mb-1">Admin Feedback:</p>
+                                    <p className="text-red-700 dark:text-red-300">{video.feedback}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-8">
+            <div className="flex items-center gap-4 mb-8">
+                <div className="w-20 h-20 rounded-full bg-accent-green flex items-center justify-center text-white text-3xl font-serif font-bold">
+                    {user.name.charAt(0)}
+                </div>
+                <div>
+                    <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">My Page</h2>
+                    <p className="text-slate-500">{user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</p>
+                </div>
+            </div>
+
+            <div className="border-b border-slate-200 dark:border-slate-700 flex gap-6">
+                <button onClick={() => setTab("uploads")} className={`pb-3 font-bold text-sm ${tab === "uploads" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>My Uploads</button>
+                <button onClick={() => setTab("favorites")} className={`pb-3 font-bold text-sm ${tab === "favorites" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>Favorites</button>
+                <button onClick={() => setTab("history")} className={`pb-3 font-bold text-sm ${tab === "history" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>Watch History</button>
+            </div>
+
+            {tab === "uploads" && (
+                <div>
+                     <div className="mb-6 bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 p-4 rounded-xl flex items-start gap-3">
+                        <AlertCircle className="text-blue-500 shrink-0 mt-0.5" size={18} />
+                        <div className="text-sm text-slate-600 dark:text-slate-300">
+                           <p className="font-bold mb-1">Upload Status Guide</p>
+                           <ul className="list-disc pl-4 space-y-1">
+                               <li><span className="text-green-600 font-bold">Approved:</span> Visible to everyone in the gallery.</li>
+                               <li><span className="text-yellow-600 font-bold">Pending:</span> Currently being reviewed by our volunteers.</li>
+                               <li><span className="text-red-600 font-bold">Rejected:</span> Does not meet guidelines. See feedback for details.</li>
+                           </ul>
+                        </div>
+                     </div>
+                    <VideoList items={myUploads} showStatus={true} />
+                </div>
+            )}
+            {tab === "favorites" && <VideoList items={myFavorites} />}
+            {tab === "history" && <VideoList items={myHistory} />}
+        </div>
+    );
 };
 
 // --- Contact View ---
@@ -882,10 +1058,12 @@ const ContactView = () => {
 
 // --- Admin View ---
 
-const AdminView = ({ ai, user, navigate }: { ai: GoogleGenAI, user: UserType, navigate: any }) => {
+const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: GoogleGenAI, user: UserType, navigate: any, videos: VideoType[], setVideos: any }) => {
   const [contentToCheck, setContentToCheck] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -912,59 +1090,139 @@ const AdminView = ({ ai, user, navigate }: { ai: GoogleGenAI, user: UserType, na
     }
   };
 
+  const handleVerdict = (id: number, status: 'approved' | 'rejected') => {
+      setVideos((prev: VideoType[]) => prev.map(v => 
+          v.id === id 
+          ? { ...v, status, feedback: status === 'rejected' ? rejectReason : "" } 
+          : v
+      ));
+      setRejectReason("");
+      setSelectedReviewId(null);
+  };
+
   if (!user || user.role !== "admin") return null;
 
+  const pendingVideos = videos.filter(v => v.status === 'pending');
+
   return (
-    <div className="max-w-4xl mx-auto py-8">
-       <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-3">
-         <ShieldAlert className="text-red-500" /> Admin Dashboard
-       </h2>
+    <div className="max-w-6xl mx-auto py-8">
+       <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                <ShieldAlert className="text-eggplant dark:text-teal-300" /> Admin Dashboard
+            </h2>
+            <span className="bg-eggplant text-white px-4 py-1 rounded-full text-xs font-bold uppercase">Volunteer Mode</span>
+       </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-             <h3 className="font-bold text-lg mb-4 dark:text-white">Content Safety Check</h3>
-             <p className="text-sm text-slate-500 mb-4">Use AI to pre-screen user content before approving.</p>
-             
-             <textarea 
-               value={contentToCheck}
-               onChange={(e) => setContentToCheck(e.target.value)}
-               className="w-full h-32 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white mb-4 text-sm"
-               placeholder="Paste video transcript or description here..."
-             />
-             
-             <button 
-               onClick={handleCheckSafety}
-               disabled={checking || !contentToCheck}
-               className="bg-eggplant text-white px-6 py-2 rounded-lg font-bold text-sm hover:bg-eggplant-dark disabled:opacity-50"
-             >
-               {checking ? "Analyzing..." : "Check Safety"}
-             </button>
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* LEFT: PENDING REVIEWS */}
+          <div className="space-y-6">
+            <h3 className="font-bold text-xl dark:text-white flex items-center gap-2">
+                <Clock className="text-yellow-500"/> Review Queue ({pendingVideos.length})
+            </h3>
+            
+            {pendingVideos.length === 0 ? (
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
+                    <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500"/>
+                    <p>All caught up! No pending videos.</p>
+                </div>
+            ) : (
+                pendingVideos.map(video => (
+                    <div key={video.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div className="flex gap-4 mb-4">
+                            <div className={`w-32 h-20 ${video.color} rounded-lg flex items-center justify-center shrink-0`}>
+                                <Video className="text-slate-400" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-lg dark:text-white">{video.title}</h4>
+                                <p className="text-sm text-slate-500">by {video.author} • {video.grade}</p>
+                                <span className="inline-block mt-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded font-bold uppercase">Pending Review</span>
+                            </div>
+                        </div>
 
-             {feedback && (
-               <div className={`mt-6 p-4 rounded-xl border text-sm ${feedback.includes("unsafe") || feedback.includes("sensitive") ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
-                  <h4 className="font-bold mb-1 flex items-center gap-2">
-                    {feedback.includes("unsafe") || feedback.includes("sensitive") ? <ShieldAlert size={16}/> : <CheckCircle2 size={16}/>}
-                    AI Assessment:
-                  </h4>
-                  {feedback}
-               </div>
-             )}
+                        {selectedReviewId === video.id ? (
+                            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
+                                <p className="text-sm font-bold mb-2 dark:text-white">Review Action:</p>
+                                <textarea 
+                                    className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 mb-3 text-sm dark:bg-slate-800 dark:text-white"
+                                    placeholder="Reason for rejection (required if rejecting)..."
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                />
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => handleVerdict(video.id, 'rejected')}
+                                        disabled={!rejectReason}
+                                        className="flex-1 bg-red-100 text-red-700 py-2 rounded-lg font-bold hover:bg-red-200 disabled:opacity-50 text-sm"
+                                    >
+                                        Reject Video
+                                    </button>
+                                    <button 
+                                        onClick={() => setSelectedReviewId(null)}
+                                        className="px-4 py-2 text-slate-500 font-bold hover:text-slate-700 text-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => handleVerdict(video.id, 'approved')}
+                                    className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 text-sm flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 size={16} /> Approve
+                                </button>
+                                <button 
+                                    onClick={() => setSelectedReviewId(video.id)}
+                                    className="flex-1 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold hover:bg-red-100 text-sm flex items-center justify-center gap-2"
+                                >
+                                    <X size={16} /> Reject
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ))
+            )}
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-             <h3 className="font-bold text-lg mb-4 dark:text-white">Pending Approvals</h3>
-             <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                     <div>
-                        <p className="font-bold text-sm dark:text-white">Video Submission #{100 + i}</p>
-                        <p className="text-xs text-slate-500">Submitted 2h ago by User_99</p>
-                     </div>
-                     <button className="text-xs font-bold text-eggplant border border-eggplant px-3 py-1 rounded hover:bg-eggplant hover:text-white transition-colors">Review</button>
+          {/* RIGHT: AI TOOLS */}
+          <div className="space-y-6">
+             <h3 className="font-bold text-xl dark:text-white flex items-center gap-2">
+                <Sparkles className="text-eggplant dark:text-teal-300"/> AI Content Assist
+             </h3>
+             
+             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                <h4 className="font-bold text-sm mb-2 dark:text-white">Pre-screen Text Content</h4>
+                <p className="text-xs text-slate-500 mb-4">Paste video transcripts or descriptions here to detect potential violations before manual review.</p>
+                
+                <textarea 
+                  value={contentToCheck}
+                  onChange={(e) => setContentToCheck(e.target.value)}
+                  className="w-full h-32 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white mb-4 text-sm resize-none"
+                  placeholder="Paste text here..."
+                />
+                
+                <button 
+                  onClick={handleCheckSafety}
+                  disabled={checking || !contentToCheck}
+                  className="w-full bg-slate-800 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-black disabled:opacity-50 transition-colors"
+                >
+                  {checking ? "Analyzing..." : "Analyze Safety"}
+                </button>
+
+                {feedback && (
+                  <div className={`mt-6 p-4 rounded-xl border text-sm ${feedback.includes("unsafe") || feedback.includes("sensitive") ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
+                      <h4 className="font-bold mb-1 flex items-center gap-2">
+                        {feedback.includes("unsafe") || feedback.includes("sensitive") ? <ShieldAlert size={16}/> : <CheckCircle2 size={16}/>}
+                        AI Assessment:
+                      </h4>
+                      {feedback}
                   </div>
-                ))}
+                )}
              </div>
           </div>
+
        </div>
     </div>
   );
@@ -973,13 +1231,16 @@ const AdminView = ({ ai, user, navigate }: { ai: GoogleGenAI, user: UserType, na
 // --- Main App Component ---
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState<"home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail" | "profile">("home");
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [user, setUser] = useState<UserType>(null);
   const [darkMode, setDarkMode] = useState(false);
   
   // Data State
   const [videos, setVideos] = useState<VideoType[]>(INITIAL_VIDEOS);
+  // User interactions state (simulated session)
+  const [starredVideoIds, setStarredVideoIds] = useState<number[]>([]);
+  const [historyVideoIds, setHistoryVideoIds] = useState<number[]>([]);
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -993,7 +1254,9 @@ const App = () => {
   }, [darkMode]);
 
   const handleLogin = (role: "student" | "admin", name: string) => {
-    setUser({ id: "user-123", name, role });
+    // Determine ID based on role for demo persistence logic
+    const id = role === 'admin' ? 'user-admin' : 'user-123';
+    setUser({ id, name, role });
     setActiveTab("home");
   };
 
@@ -1004,19 +1267,34 @@ const App = () => {
 
   const handleVideoClick = (id: number) => {
     setSelectedVideoId(id);
+    // Add to history if not already present
+    setHistoryVideoIds(prev => {
+        const newHistory = prev.filter(vid => vid !== id); // Remove if exists to move to top
+        return [id, ...newHistory];
+    });
     setActiveTab("video-detail");
   };
 
   const renderContent = () => {
     switch (activeTab) {
       case "home": return <HomeView ai={ai} navigate={setActiveTab} />;
-      case "upload": return <UploadView user={user} navigate={setActiveTab} />;
+      case "upload": return <UploadView user={user} navigate={setActiveTab} setVideos={setVideos} />;
       case "gallery": return <GalleryView videos={videos} onVideoClick={handleVideoClick} />;
       case "video-detail": 
         const video = videos.find(v => v.id === selectedVideoId);
-        return video ? <VideoDetailView video={video} user={user} navigate={setActiveTab} setVideos={setVideos} /> : <GalleryView videos={videos} onVideoClick={handleVideoClick} />;
+        return video ? 
+            <VideoDetailView 
+                video={video} 
+                user={user} 
+                navigate={setActiveTab} 
+                setVideos={setVideos} 
+                starredVideoIds={starredVideoIds}
+                setStarredVideoIds={setStarredVideoIds}
+            /> : 
+            <GalleryView videos={videos} onVideoClick={handleVideoClick} />;
       case "contact": return <ContactView />;
-      case "admin": return <AdminView ai={ai} user={user} navigate={setActiveTab} />;
+      case "admin": return <AdminView ai={ai} user={user} navigate={setActiveTab} videos={videos} setVideos={setVideos} />;
+      case "profile": return <ProfileView user={user} videos={videos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} />;
       case "login": return <LoginView onLogin={handleLogin} navigate={setActiveTab} />;
       default: return <HomeView ai={ai} navigate={setActiveTab} />;
     }
@@ -1025,7 +1303,7 @@ const App = () => {
   return (
     <div className={`flex flex-col h-screen font-sans overflow-hidden transition-colors duration-300 ${darkMode ? "bg-slate-900 text-slate-100" : "bg-cream text-slate-800"}`}>
       
-      {/* Top Navigation (New Design) */}
+      {/* Top Navigation */}
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
