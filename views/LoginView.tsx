@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, ShieldAlert } from "lucide-react";
+import { SpotlightButton } from "../components/SpotlightButton";
 
 export const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "admin", name: string) => void, navigate: any }) => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -121,12 +122,12 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "
             </div>
           )}
 
-          <button 
+          <SpotlightButton 
             type="submit" 
             className="w-full bg-eggplant text-white py-3.5 rounded-xl font-bold hover:bg-eggplant-dark transition-all shadow-md mt-4"
           >
             {isRegistering ? "Create Account" : "Log In"}
-          </button>
+          </SpotlightButton>
         </form>
 
         <div className="text-center mt-6">

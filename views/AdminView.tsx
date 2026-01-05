@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
-import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Sparkles } from "lucide-react";
+import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { UserType, VideoType } from "../types";
-import { SYSTEM_INSTRUCTION } from "../constants";
 
 export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: GoogleGenAI, user: UserType, navigate: any, videos: VideoType[], setVideos: any }) => {
-  const [contentToCheck, setContentToCheck] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [escalationNote, setEscalationNote] = useState("");
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
-  const [adminTab, setAdminTab] = useState<'queue' | 'history'>('queue');
+  const [reviewAction, setReviewAction] = useState<'reject' | 'escalate' | null>(null);
+  const [adminTab, setAdminTab] = useState<'queue' | 'escalated' | 'history'>('queue');
+  
+  // History State
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'approved' | 'rejected' | 'needs_review'>('all');
+  const [expandedHistoryId, setExpandedHistoryId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -18,201 +21,301 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
     }
   }, [user, navigate]);
 
-  const handleCheckSafety = async () => {
-    if (!contentToCheck) return;
-    setChecking(true);
-    setFeedback(null);
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `Review this content: "${contentToCheck}"`,
-        config: { systemInstruction: SYSTEM_INSTRUCTION }
-      });
-      setFeedback(response.text);
-    } catch (e) {
-      console.error(e);
-      setFeedback("Error checking content. Please try again.");
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const handleVerdict = (id: number, status: 'approved' | 'rejected') => {
+  const handleVerdict = (id: number, status: string) => {
       setVideos((prev: VideoType[]) => prev.map(v => 
           v.id === id 
-          ? { ...v, status, feedback: status === 'rejected' ? rejectReason : "" } 
+          ? { 
+              ...v, 
+              status, 
+              feedback: status === 'rejected' ? rejectReason : "",
+              admin_notes: status === 'needs_review' ? escalationNote : v.admin_notes
+            } 
           : v
       ));
+      
+      // Reset states
       setRejectReason("");
+      setEscalationNote("");
       setSelectedReviewId(null);
+      setReviewAction(null);
   };
 
   if (!user || user.role !== "admin") return null;
 
   const pendingVideos = videos.filter(v => v.status === 'pending');
-  const historyVideos = videos.filter(v => v.status === 'approved' || v.status === 'rejected');
+  const needsReviewVideos = videos.filter(v => v.status === 'needs_review');
+  
+  const historyVideos = videos.filter(v => {
+      if (v.status === 'pending') return false;
+      
+      // Status Filter
+      if (historyFilter !== 'all' && v.status !== historyFilter) return false;
+
+      // Search Filter
+      if (historySearch) {
+          const lower = historySearch.toLowerCase();
+          return v.title.toLowerCase().includes(lower) || 
+                 v.author.toLowerCase().includes(lower);
+      }
+      return true;
+  });
+
+  // Reusable card for both Queue (interactive) and History (read-only)
+  const renderVideoCard = (video: VideoType, isInteractive: boolean, isEscalatedQueue: boolean = false) => {
+    const isActionSelected = selectedReviewId === video.id;
+
+    return (
+      <div key={video.id} className={`bg-white dark:bg-slate-800 p-6 rounded-2xl border ${!isInteractive ? 'border-none shadow-none p-0' : 'border-slate-200 dark:border-slate-700 shadow-sm'} animate-in fade-in slide-in-from-top-4 duration-500`}>
+          <div className="flex gap-4 mb-4">
+              <div className={`w-32 h-20 ${video.color} rounded-lg flex items-center justify-center shrink-0`}>
+                  <Video className="text-slate-400" />
+              </div>
+              <div className="flex-1">
+                  <h4 className="font-bold text-lg dark:text-white">{video.title}</h4>
+                  <p className="text-sm text-slate-500">by {video.author}</p>
+                  
+                  {/* Expanded details always visible if interactive or if expanded in history */}
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
+                      {video.description}
+                  </p>
+                  
+                  <div className="flex gap-2 mt-2">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">{video.category}</span>
+                      <span className="text-xs text-slate-400">• {video.grade}</span>
+                  </div>
+              </div>
+          </div>
+
+          {/* Read-Only Status / Feedback Display */}
+          {!isInteractive && (
+             <div className="mt-4 space-y-3">
+                {video.status === 'rejected' && video.feedback && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg text-sm text-red-800 dark:text-red-300">
+                        <span className="font-bold block mb-1">Rejection Reason:</span>
+                        {video.feedback}
+                    </div>
+                )}
+                {video.admin_notes && (
+                    <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg text-sm text-orange-800 dark:text-orange-200">
+                        <span className="font-bold block mb-1 flex items-center gap-1"><AlertTriangle size={12}/> Admin Note:</span> 
+                        {video.admin_notes}
+                    </div>
+                )}
+             </div>
+          )}
+
+          {/* Interactive Action Area */}
+          {isInteractive && (
+             <>
+                {/* Admin Note Display for Escalated Queue Items */}
+                {isEscalatedQueue && video.admin_notes && (
+                    <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg text-sm text-orange-800 dark:text-orange-200">
+                        <span className="font-bold block mb-1 flex items-center gap-1"><AlertTriangle size={12}/> Previous Admin Note:</span> 
+                        {video.admin_notes}
+                    </div>
+                )}
+
+                {isActionSelected ? (
+                    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
+                        <p className="text-sm font-bold mb-2 dark:text-white">
+                            {reviewAction === 'reject' ? "Reason for Rejection:" : "Reason for Escalation:"}
+                        </p>
+                        
+                        <textarea 
+                            className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 mb-3 text-sm dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-eggplant outline-none"
+                            placeholder={reviewAction === 'reject' ? "Violation of guidelines (required)..." : "Why are you unsure? Please provide context (required)..."}
+                            value={reviewAction === 'reject' ? rejectReason : escalationNote}
+                            onChange={(e) => reviewAction === 'reject' ? setRejectReason(e.target.value) : setEscalationNote(e.target.value)}
+                            autoFocus
+                        />
+                        
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => handleVerdict(video.id, reviewAction === 'reject' ? 'rejected' : 'needs_review')}
+                                disabled={reviewAction === 'reject' ? !rejectReason.trim() : !escalationNote.trim()}
+                                className={`flex-1 py-2.5 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors ${
+                                    reviewAction === 'reject' 
+                                    ? 'bg-red-500 text-white hover:bg-red-600' 
+                                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                                }`}
+                            >
+                                {reviewAction === 'reject' ? 'Confirm Reject' : 'Submit for Review'}
+                            </button>
+                            <button 
+                                onClick={() => { setSelectedReviewId(null); setReviewAction(null); setRejectReason(""); setEscalationNote(""); }}
+                                className="px-6 py-2.5 text-slate-500 font-bold hover:text-slate-700 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex gap-4 pt-2">
+                        <button 
+                            onClick={() => handleVerdict(video.id, 'approved')}
+                            className="flex-1 bg-green-500 text-white py-2.5 rounded-lg font-bold hover:bg-green-600 text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
+                        >
+                            <CheckCircle2 size={18} /> Approve
+                        </button>
+                        <button 
+                            onClick={() => { setSelectedReviewId(video.id); setReviewAction('reject'); }}
+                            className="flex-1 bg-red-50 text-red-600 border border-red-200 py-2.5 rounded-lg font-bold hover:bg-red-100 text-sm flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <X size={18} /> Reject
+                        </button>
+                        <button 
+                            onClick={() => { setSelectedReviewId(video.id); setReviewAction('escalate'); }}
+                            className="flex-1 bg-orange-50 text-orange-600 border border-orange-200 py-2.5 rounded-lg font-bold hover:bg-orange-100 text-sm flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <HelpCircle size={18} /> Not Sure
+                        </button>
+                    </div>
+                )}
+             </>
+          )}
+      </div>
+    );
+  };
+
+  const TabButton = ({ id, label, count, icon: Icon }: any) => (
+     <button 
+        onClick={() => { setAdminTab(id); setExpandedHistoryId(null); }}
+        className={`flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-full transition-colors ${adminTab === id ? 'bg-eggplant text-white shadow-md' : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+     >
+        {Icon && <Icon size={14} />}
+        {label}
+        {count !== undefined && <span className="ml-1 opacity-80 text-xs bg-white/20 px-1.5 rounded-full">{count}</span>}
+     </button>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto py-8">
-       <div className="flex justify-between items-center mb-8">
+    <div className="max-w-5xl mx-auto py-8">
+       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white flex items-center gap-3">
                 <ShieldAlert className="text-eggplant dark:text-teal-300" /> Admin Dashboard
             </h2>
-            <div className="flex gap-4 items-center">
-                 <button 
-                    onClick={() => setAdminTab('queue')}
-                    className={`text-sm font-bold px-4 py-2 rounded-full transition-colors ${adminTab === 'queue' ? 'bg-eggplant text-white' : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300'}`}
-                 >
-                    Queue ({pendingVideos.length})
-                 </button>
-                 <button 
-                    onClick={() => setAdminTab('history')}
-                    className={`text-sm font-bold px-4 py-2 rounded-full transition-colors ${adminTab === 'history' ? 'bg-eggplant text-white' : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300'}`}
-                 >
-                    History
-                 </button>
+            <div className="flex flex-wrap gap-2 items-center bg-slate-100 dark:bg-slate-800 p-1.5 rounded-full">
+                 <TabButton id="queue" label="Queue" count={pendingVideos.length} icon={Clock} />
+                 <TabButton id="escalated" label="Needs Review" count={needsReviewVideos.length} icon={AlertTriangle} />
+                 <TabButton id="history" label="History" icon={History} />
             </div>
        </div>
 
-       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* LEFT: PENDING REVIEWS / HISTORY */}
+       <div className="w-full">
           <div className="space-y-6">
             <h3 className="font-bold text-xl dark:text-white flex items-center gap-2">
-                {adminTab === 'queue' ? <Clock className="text-yellow-500"/> : <History className="text-blue-500"/>}
-                {adminTab === 'queue' ? 'Review Queue' : 'Review History'}
+                {adminTab === 'queue' && <><Clock className="text-yellow-500"/> Review Queue</>}
+                {adminTab === 'escalated' && <><AlertTriangle className="text-orange-500"/> Escalated Items</>}
+                {adminTab === 'history' && <><History className="text-blue-500"/> Review History</>}
             </h3>
             
-            {adminTab === 'queue' ? (
+            {adminTab === 'queue' && (
                 pendingVideos.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
+                    <div className="bg-white dark:bg-slate-800 p-12 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
                         <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500"/>
-                        <p>All caught up! No pending videos.</p>
+                        <p className="font-bold text-lg">All caught up!</p>
+                        <p className="text-sm">No new videos waiting for review.</p>
                     </div>
                 ) : (
-                    pendingVideos.map(video => (
-                        <div key={video.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                            <div className="flex gap-4 mb-4">
-                                <div className={`w-32 h-20 ${video.color} rounded-lg flex items-center justify-center shrink-0`}>
-                                    <Video className="text-slate-400" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-lg dark:text-white">{video.title}</h4>
-                                    {/* Anonymized user info */}
-                                    <p className="text-sm text-slate-500">by Anonymous Student</p>
-                                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">{video.description}</p>
-                                    <span className="inline-block mt-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded font-bold uppercase">Pending Review</span>
-                                </div>
-                            </div>
-
-                            {selectedReviewId === video.id ? (
-                                <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
-                                    <p className="text-sm font-bold mb-2 dark:text-white">Review Action:</p>
-                                    <textarea 
-                                        className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 mb-3 text-sm dark:bg-slate-800 dark:text-white"
-                                        placeholder="Reason for rejection (required if rejecting)..."
-                                        value={rejectReason}
-                                        onChange={(e) => setRejectReason(e.target.value)}
-                                    />
-                                    <div className="flex gap-3">
-                                        <button 
-                                            onClick={() => handleVerdict(video.id, 'rejected')}
-                                            disabled={!rejectReason}
-                                            className="flex-1 bg-red-100 text-red-700 py-2 rounded-lg font-bold hover:bg-red-200 disabled:opacity-50 text-sm"
-                                        >
-                                            Reject
-                                        </button>
-                                        <button 
-                                            onClick={() => setSelectedReviewId(null)}
-                                            className="px-4 py-2 text-slate-500 font-bold hover:text-slate-700 text-sm"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex gap-3">
-                                    <button 
-                                        onClick={() => handleVerdict(video.id, 'approved')}
-                                        className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 text-sm flex items-center justify-center gap-2"
-                                    >
-                                        <CheckCircle2 size={16} /> Approve
-                                    </button>
-                                    <button 
-                                        onClick={() => setSelectedReviewId(video.id)}
-                                        className="flex-1 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold hover:bg-red-100 text-sm flex items-center justify-center gap-2"
-                                    >
-                                        <X size={16} /> Reject
-                                    </button>
-                                    <button 
-                                        onClick={() => { setSelectedReviewId(null); /* Simple logic for now: just deselect/skip */ }}
-                                        className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2 rounded-lg font-bold hover:bg-slate-200 dark:hover:bg-slate-600 text-sm flex items-center justify-center gap-2"
-                                    >
-                                        <HelpCircle size={16} /> Not Sure
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ))
+                    <div className="space-y-4">
+                        {pendingVideos.map(v => renderVideoCard(v, true, false))}
+                    </div>
                 )
-            ) : (
+            )}
+
+            {adminTab === 'escalated' && (
+                needsReviewVideos.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-800 p-12 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
+                        <CheckCircle2 size={48} className="mx-auto mb-4 text-slate-300"/>
+                        <p>No escalated items.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex gap-3 text-sm text-orange-800 mb-4">
+                            <AlertTriangle size={20} className="shrink-0"/>
+                            <p>These videos were marked as "Not Sure" by other admins. Please review them carefully.</p>
+                        </div>
+                        {needsReviewVideos.map(v => renderVideoCard(v, true, true))}
+                    </div>
+                )
+            )}
+
+            {adminTab === 'history' && (
                 <div className="space-y-4">
+                     {/* Search and Filter UI */}
+                     <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                            <input 
+                                type="text" 
+                                placeholder="Search history..." 
+                                value={historySearch}
+                                onChange={(e) => setHistorySearch(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-eggplant outline-none dark:text-white"
+                            />
+                        </div>
+                        <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0">
+                            {(['all', 'approved', 'rejected', 'needs_review'] as const).map((filter) => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setHistoryFilter(filter)}
+                                    className={`px-3 py-2 text-xs font-bold capitalize transition-colors ${
+                                        historyFilter === filter 
+                                            ? 'bg-eggplant text-white' 
+                                            : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                    }`}
+                                >
+                                    {filter.replace('_', ' ')}
+                                </button>
+                            ))}
+                        </div>
+                     </div>
+
                      {historyVideos.length === 0 ? (
-                        <p className="text-slate-500">No review history.</p>
+                        <p className="text-slate-500 text-center py-8">No matching records found.</p>
                      ) : (
-                        historyVideos.map(video => (
-                            <div key={video.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center opacity-75">
-                                 <div>
-                                    <p className="font-bold text-slate-800 dark:text-white line-clamp-1">{video.title}</p>
-                                    <p className="text-xs text-slate-500">{video.author}</p>
-                                 </div>
-                                 <div className={`px-2 py-1 rounded text-xs font-bold uppercase ${video.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    {video.status}
-                                 </div>
-                            </div>
-                        ))
+                        historyVideos.map(video => {
+                            const isExpanded = expandedHistoryId === video.id;
+                            return (
+                                <div 
+                                    key={video.id} 
+                                    onClick={() => setExpandedHistoryId(isExpanded ? null : video.id)}
+                                    className={`bg-white dark:bg-slate-800 rounded-xl border transition-all cursor-pointer ${
+                                        isExpanded 
+                                            ? 'border-blue-500 ring-1 ring-blue-500 shadow-md' 
+                                            : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
+                                    }`}
+                                >
+                                     <div className="p-4 flex justify-between items-center">
+                                        <div className="flex-1 pr-4">
+                                            <p className="font-bold text-slate-800 dark:text-white line-clamp-1">{video.title}</p>
+                                            <p className="text-xs text-slate-500">{video.author}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                                                video.status === 'approved' ? 'bg-green-100 text-green-700' : 
+                                                video.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                'bg-orange-100 text-orange-700'
+                                            }`}>
+                                                {video.status.replace('_', ' ')}
+                                            </div>
+                                            {isExpanded ? <ChevronUp size={16} className="text-slate-400"/> : <ChevronDown size={16} className="text-slate-400"/>}
+                                        </div>
+                                     </div>
+                                     
+                                     {/* Expanded Details */}
+                                     {isExpanded && (
+                                         <div className="border-t border-slate-100 dark:border-slate-700 p-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-b-xl cursor-default" onClick={(e) => e.stopPropagation()}>
+                                             {renderVideoCard(video, false)}
+                                         </div>
+                                     )}
+                                </div>
+                            );
+                        })
                      )}
                 </div>
             )}
           </div>
-
-          {/* RIGHT: AI TOOLS */}
-          <div className="space-y-6">
-             <h3 className="font-bold text-xl dark:text-white flex items-center gap-2">
-                <Sparkles className="text-eggplant dark:text-teal-300"/> AI Content Assist
-             </h3>
-             
-             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                <h4 className="font-bold text-sm mb-2 dark:text-white">Pre-screen Text Content</h4>
-                <p className="text-xs text-slate-500 mb-4">Paste video transcripts or descriptions here to detect potential violations before manual review.</p>
-                
-                <textarea 
-                  value={contentToCheck}
-                  onChange={(e) => setContentToCheck(e.target.value)}
-                  className="w-full h-32 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white mb-4 text-sm resize-none"
-                  placeholder="Paste text here..."
-                />
-                
-                <button 
-                  onClick={handleCheckSafety}
-                  disabled={checking || !contentToCheck}
-                  className="w-full bg-slate-800 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-black disabled:opacity-50 transition-colors"
-                >
-                  {checking ? "Analyzing..." : "Analyze Safety"}
-                </button>
-
-                {feedback && (
-                  <div className={`mt-6 p-4 rounded-xl border text-sm ${feedback.includes("unsafe") || feedback.includes("sensitive") ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700"}`}>
-                      <h4 className="font-bold mb-1 flex items-center gap-2">
-                        {feedback.includes("unsafe") || feedback.includes("sensitive") ? <ShieldAlert size={16}/> : <CheckCircle2 size={16}/>}
-                        AI Assessment:
-                      </h4>
-                      {feedback}
-                  </div>
-                )}
-             </div>
-          </div>
-
        </div>
     </div>
   );

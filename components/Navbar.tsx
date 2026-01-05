@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Sparkles, Menu, X, Sun, Moon, LogOut } from "lucide-react";
 import { UserType } from "../types";
+import { SpotlightButton } from "./SpotlightButton";
 
 export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setDarkMode }: { activeTab: string, setActiveTab: (t: any) => void, user: UserType, onLogout: () => void, darkMode: boolean, setDarkMode: (m: boolean) => void }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -13,6 +14,14 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
       {label}
     </button>
   );
+
+  const handleAvatarClick = () => {
+    if (user?.role === 'admin') {
+      setActiveTab('admin');
+    } else {
+      setActiveTab('profile');
+    }
+  };
 
   return (
     <header className={`sticky top-0 z-50 backdrop-blur-md border-b ${darkMode ? "bg-slate-900/90 border-slate-700" : "bg-cream/90 border-slate-200"}`}>
@@ -30,9 +39,16 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
           <nav className="hidden md:flex items-center gap-8">
             <NavItem id="home" label="Who We Are" />
             <NavItem id="gallery" label="Gallery" />
-            <NavItem id="upload" label="Share Story" />
+            
+            {/* Share Story: Public or Student only */}
+            {(!user || user.role === 'student') && <NavItem id="upload" label="Share Story" />}
+            
             <NavItem id="contact" label="Contact Us" />
-            {user && <NavItem id="profile" label="My Page" />}
+            
+            {/* Profile: Student only */}
+            {user && user.role === 'student' && <NavItem id="profile" label="My Page" />}
+            
+            {/* Admin Dashboard: Admin only */}
             {user && user.role === 'admin' && <NavItem id="admin" label="Admin Dashboard" />}
           </nav>
 
@@ -48,7 +64,11 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
                   <p className={`text-sm font-bold ${darkMode ? "text-white" : "text-eggplant"}`}>{user.name}</p>
                   <p className="text-xs text-slate-500 uppercase">{user.role}</p>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-accent-green flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setActiveTab('profile')}>
+                <div 
+                  className="w-8 h-8 rounded-full bg-accent-green flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-opacity" 
+                  onClick={handleAvatarClick}
+                  title={user.role === 'admin' ? "Go to Dashboard" : "Go to Profile"}
+                >
                    {user.name.charAt(0)}
                 </div>
                 <button onClick={onLogout} title="Log Out" className="text-slate-400 hover:text-red-500">
@@ -56,12 +76,12 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
                 </button>
               </div>
             ) : (
-              <button 
+              <SpotlightButton 
                 onClick={() => setActiveTab("login")}
                 className="bg-eggplant text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-eggplant-dark transition-transform hover:-translate-y-0.5 shadow-md"
               >
                 Log In
-              </button>
+              </SpotlightButton>
             )}
           </div>
 
@@ -78,10 +98,14 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
           <div className="flex flex-col space-y-4">
             <NavItem id="home" label="Who We Are" />
             <NavItem id="gallery" label="Gallery" />
-            <NavItem id="upload" label="Share Story" />
+            
+            {(!user || user.role === 'student') && <NavItem id="upload" label="Share Story" />}
+            
             <NavItem id="contact" label="Contact Us" />
-            {user && <NavItem id="profile" label="My Page" />}
+            
+            {user && user.role === 'student' && <NavItem id="profile" label="My Page" />}
             {user && user.role === 'admin' && <NavItem id="admin" label="Admin Dashboard" />}
+            
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4 flex justify-between items-center">
                <button onClick={() => setDarkMode(!darkMode)} className="flex items-center gap-2 text-sm font-bold">
                   {darkMode ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}

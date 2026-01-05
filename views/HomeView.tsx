@@ -4,6 +4,7 @@ import { ArrowLeft, Video, Heart, ThumbsUp, Lightbulb, Loader2, CheckCircle2, Up
 import { TOPIC_SYSTEM_PROMPT } from "../constants";
 import { MissionSection } from "../components/MissionSection";
 import { TestimonialsSection } from "../components/TestimonialsSection";
+import { SpotlightButton } from "../components/SpotlightButton";
 
 export const HomeView = ({ ai, navigate }: { ai: GoogleGenAI, navigate: (tab: any) => void }) => {
   const [topicData, setTopicData] = useState<any>(null);
@@ -53,9 +54,9 @@ export const HomeView = ({ ai, navigate }: { ai: GoogleGenAI, navigate: (tab: an
             <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-lg">
                We build a digital space designed to let students share ideas about school and release pressure. Find your balance today.
             </p>
-            <button onClick={() => navigate("home")} className="bg-eggplant text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-eggplant-dark transition-all flex items-center gap-2 group">
+            <SpotlightButton onClick={() => navigate("home")} className="bg-eggplant text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-eggplant-dark transition-all flex items-center gap-2 group w-auto">
                Curious how we help? <ArrowLeft className="rotate-180 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </SpotlightButton>
          </div>
 
          {/* Illustration Mock */}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { User, AlertCircle, Upload, Loader2 } from "lucide-react";
 import { UserType } from "../types";
+import { SpotlightButton } from "../components/SpotlightButton";
 
 export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navigate: any, setVideos: any }) => {
   const [title, setTitle] = useState("");
@@ -95,9 +96,9 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} required className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-eggplant" placeholder="Tell us about your video..." />
           </div>
 
-          <button disabled={uploading} className="w-full bg-eggplant text-white py-4 rounded-xl font-bold hover:bg-eggplant-dark transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          <SpotlightButton disabled={uploading} className="w-full bg-eggplant text-white py-4 rounded-xl font-bold hover:bg-eggplant-dark transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
             {uploading ? <><Loader2 className="animate-spin"/> Uploading...</> : "Submit for Review"}
-          </button>
+          </SpotlightButton>
         </form>
       </div>
     </div>

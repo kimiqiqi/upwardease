@@ -19,4 +19,5 @@ export type VideoType = {
   status: string;
   feedback: string;
   description?: string;
+  admin_notes?: string;
 };
