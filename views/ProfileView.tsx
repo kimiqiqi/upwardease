@@ -1,9 +1,100 @@
 import React, { useState } from "react";
-import { Plus, AlertCircle, PlayCircle } from "lucide-react";
+import { Plus, AlertCircle, PlayCircle, RotateCcw, Send } from "lucide-react";
 import { UserType, VideoType } from "../types";
 
-export const ProfileView = ({ user, videos, starredVideoIds, historyVideoIds, onVideoClick, navigate }: { user: UserType, videos: VideoType[], starredVideoIds: number[], historyVideoIds: number[], onVideoClick: (id: number) => void, navigate: any }) => {
+// Extracted VideoList component to prevent re-rendering issues
+const VideoList = ({ 
+    items, 
+    showStatus, 
+    onVideoClick, 
+    appealingVideoId, 
+    setAppealingVideoId, 
+    appealReason, 
+    setAppealReason, 
+    handleAppeal 
+}: { 
+    items: VideoType[], 
+    showStatus?: boolean, 
+    onVideoClick: (id: number) => void,
+    appealingVideoId: number | null,
+    setAppealingVideoId: (id: number | null) => void,
+    appealReason: string,
+    setAppealReason: (val: string) => void,
+    handleAppeal: (id: number) => void
+}) => {
+    if (items.length === 0) return <div className="text-center py-12 text-slate-500">No videos found.</div>;
+    
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {items.map(video => (
+                <div key={video.id} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
+                    <div onClick={() => video.status === 'approved' && onVideoClick(video.id)} className={`aspect-video ${video.color} relative flex items-center justify-center ${video.status === 'approved' ? 'cursor-pointer' : 'opacity-75'}`}>
+                        <PlayCircle size={48} className="text-slate-900/50" />
+                        {showStatus && (
+                            <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold uppercase ${
+                                video.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                video.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                            }`}>
+                                {video.status.replace('_', ' ')}
+                            </div>
+                        )}
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col">
+                        <h3 className="font-bold text-slate-900 dark:text-white mb-1 line-clamp-1">{video.title}</h3>
+                        <p className="text-xs text-slate-500">{video.views} views</p>
+                        
+                        {showStatus && video.status === 'rejected' && (
+                            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900 text-xs">
+                                <p className="font-bold text-red-800 dark:text-red-400 mb-1">Admin Feedback:</p>
+                                <p className="text-red-700 dark:text-red-300 mb-3">{video.feedback || "No feedback provided."}</p>
+                                
+                                {appealingVideoId === video.id ? (
+                                    <div className="mt-2 animate-in fade-in">
+                                        <textarea 
+                                            className="w-full p-2 rounded border border-red-200 dark:border-red-800 mb-2 dark:bg-slate-800 dark:text-white"
+                                            placeholder="Why should this be reconsidered?"
+                                            rows={2}
+                                            value={appealReason}
+                                            onChange={(e) => setAppealReason(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => handleAppeal(video.id)}
+                                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 w-full flex items-center justify-center gap-1"
+                                            >
+                                                <Send size={12}/> Submit
+                                            </button>
+                                            <button 
+                                                onClick={() => { setAppealingVideoId(null); setAppealReason(""); }}
+                                                className="bg-white border border-red-200 text-red-600 px-3 py-1 rounded hover:bg-red-50 w-full"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button 
+                                        onClick={() => setAppealingVideoId(video.id)}
+                                        className="w-full py-2 bg-white border border-red-200 text-red-600 rounded font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <RotateCcw size={14}/> Appeal Decision
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export const ProfileView = ({ user, videos, setVideos, starredVideoIds, historyVideoIds, onVideoClick, navigate }: { user: UserType, videos: VideoType[], setVideos: any, starredVideoIds: number[], historyVideoIds: number[], onVideoClick: (id: number) => void, navigate: any }) => {
     const [tab, setTab] = useState<"uploads" | "favorites" | "history">("uploads");
+    const [appealingVideoId, setAppealingVideoId] = useState<number | null>(null);
+    const [appealReason, setAppealReason] = useState("");
 
     if (!user) return null;
 
@@ -11,40 +102,29 @@ export const ProfileView = ({ user, videos, starredVideoIds, historyVideoIds, on
     const myFavorites = videos.filter(v => starredVideoIds.includes(v.id));
     const myHistory = videos.filter(v => historyVideoIds.includes(v.id));
 
-    const VideoList = ({ items, showStatus }: { items: VideoType[], showStatus?: boolean }) => {
-        if (items.length === 0) return <div className="text-center py-12 text-slate-500">No videos found.</div>;
+    const handleAppeal = (id: number) => {
+        if (!appealReason.trim()) return;
         
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {items.map(video => (
-                    <div key={video.id} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
-                        <div onClick={() => video.status === 'approved' && onVideoClick(video.id)} className={`aspect-video ${video.color} relative flex items-center justify-center ${video.status === 'approved' ? 'cursor-pointer' : 'opacity-75'}`}>
-                            <PlayCircle size={48} className="text-slate-900/50" />
-                            {showStatus && (
-                                <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold uppercase ${
-                                    video.status === 'approved' ? 'bg-green-100 text-green-700' :
-                                    video.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                    'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                    {video.status}
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-4 flex-1 flex flex-col">
-                            <h3 className="font-bold text-slate-900 dark:text-white mb-1 line-clamp-1">{video.title}</h3>
-                            <p className="text-xs text-slate-500">{video.views} views</p>
-                            
-                            {showStatus && video.status === 'rejected' && video.feedback && (
-                                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900 text-xs">
-                                    <p className="font-bold text-red-800 dark:text-red-400 mb-1">Admin Feedback:</p>
-                                    <p className="text-red-700 dark:text-red-300">{video.feedback}</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        );
+        setVideos((prev: VideoType[]) => prev.map(v => 
+            v.id === id ? { 
+                ...v, 
+                status: 'needs_review', // Send back to admin
+                appealReason: appealReason,
+                // keep previous feedback for context or clear it? let's keep it.
+            } : v
+        ));
+        
+        setAppealingVideoId(null);
+        setAppealReason("");
+    };
+
+    const commonListProps = {
+        onVideoClick,
+        appealingVideoId,
+        setAppealingVideoId,
+        appealReason,
+        setAppealReason,
+        handleAppeal
     };
 
     return (
@@ -85,15 +165,15 @@ export const ProfileView = ({ user, videos, starredVideoIds, historyVideoIds, on
                            <ul className="list-disc pl-4 space-y-1">
                                <li><span className="text-green-600 font-bold">Approved:</span> Visible to everyone in the gallery.</li>
                                <li><span className="text-yellow-600 font-bold">Pending:</span> Currently being reviewed by our volunteers.</li>
-                               <li><span className="text-red-600 font-bold">Rejected:</span> Does not meet guidelines. See feedback for details.</li>
+                               <li><span className="text-red-600 font-bold">Rejected:</span> Does not meet guidelines. You may appeal if you believe this is an error.</li>
                            </ul>
                         </div>
                      </div>
-                    <VideoList items={myUploads} showStatus={true} />
+                    <VideoList items={myUploads} showStatus={true} {...commonListProps} />
                 </div>
             )}
-            {tab === "favorites" && <VideoList items={myFavorites} />}
-            {tab === "history" && <VideoList items={myHistory} />}
+            {tab === "favorites" && <VideoList items={myFavorites} {...commonListProps} />}
+            {tab === "history" && <VideoList items={myHistory} {...commonListProps} />}
         </div>
     );
 };

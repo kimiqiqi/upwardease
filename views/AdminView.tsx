@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { GoogleGenAI } from "@google/genai";
-import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp, Calendar, Edit3, MessageCircle } from "lucide-react";
 import { UserType, VideoType } from "../types";
 
-export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: GoogleGenAI, user: UserType, navigate: any, videos: VideoType[], setVideos: any }) => {
+export const AdminView = ({ user, navigate, videos, setVideos }: { user: UserType, navigate: any, videos: VideoType[], setVideos: any }) => {
   const [rejectReason, setRejectReason] = useState("");
   const [escalationNote, setEscalationNote] = useState("");
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
-  const [reviewAction, setReviewAction] = useState<'reject' | 'escalate' | null>(null);
+  const [reviewAction, setReviewAction] = useState<'reject' | 'escalate' | 'update_note' | null>(null);
   const [adminTab, setAdminTab] = useState<'queue' | 'escalated' | 'history'>('queue');
   
   // History State
@@ -27,8 +26,10 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
           ? { 
               ...v, 
               status, 
-              feedback: status === 'rejected' ? rejectReason : "",
-              admin_notes: status === 'needs_review' ? escalationNote : v.admin_notes
+              feedback: status === 'rejected' ? rejectReason : v.feedback,
+              admin_notes: (status === 'needs_review' || reviewAction === 'update_note') ? escalationNote : v.admin_notes,
+              approvedAt: status === 'approved' ? new Date().toISOString() : v.approvedAt,
+              appealReason: status !== 'needs_review' ? undefined : v.appealReason // Clear appeal reason if resolved, unless kept in needs_review
             } 
           : v
       ));
@@ -42,6 +43,11 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
 
   if (!user || user.role !== "admin") return null;
 
+  // Filter videos for the queue
+  // If a video has an appealReason, it should appear in the queue or escalated? 
+  // For this logic, let's put appeals in 'needs_review' or 'queue' based on status.
+  // Assuming appeals set status to 'needs_review'.
+  
   const pendingVideos = videos.filter(v => v.status === 'pending');
   const needsReviewVideos = videos.filter(v => v.status === 'needs_review');
   
@@ -60,6 +66,17 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
       return true;
   });
 
+  const formatDate = (dateString?: string) => {
+      if (!dateString) return "N/A";
+      return new Date(dateString).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+      });
+  };
+
   // Reusable card for both Queue (interactive) and History (read-only)
   const renderVideoCard = (video: VideoType, isInteractive: boolean, isEscalatedQueue: boolean = false) => {
     const isActionSelected = selectedReviewId === video.id;
@@ -71,7 +88,14 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
                   <Video className="text-slate-400" />
               </div>
               <div className="flex-1">
-                  <h4 className="font-bold text-lg dark:text-white">{video.title}</h4>
+                  <h4 className="font-bold text-lg dark:text-white flex items-center justify-between">
+                      {video.title}
+                      {video.appealReason && (
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                              <MessageCircle size={12}/> APPEAL
+                          </span>
+                      )}
+                  </h4>
                   <p className="text-sm text-slate-500">by {video.author}</p>
                   
                   {/* Expanded details always visible if interactive or if expanded in history */}
@@ -85,10 +109,34 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
                   </div>
               </div>
           </div>
+          
+          {/* Display Appeal Reason Highlight */}
+          {video.appealReason && (
+              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg text-sm text-purple-900 dark:text-purple-200">
+                  <span className="font-bold block mb-1">Student Appeal Message:</span>
+                  "{video.appealReason}"
+              </div>
+          )}
 
-          {/* Read-Only Status / Feedback Display */}
+          {/* Read-Only Status / Feedback / Dates Display */}
           {!isInteractive && (
              <div className="mt-4 space-y-3">
+                {/* Dates Section */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-xs text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700 pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                        <Calendar size={14} className="text-slate-400" />
+                        <span className="font-bold text-slate-700 dark:text-slate-300">Uploaded:</span>
+                        {formatDate(video.uploadedAt)}
+                    </div>
+                    {video.approvedAt && (
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 size={14} className="text-green-500" />
+                            <span className="font-bold text-slate-700 dark:text-slate-300">Approved:</span>
+                            {formatDate(video.approvedAt)}
+                        </div>
+                    )}
+                </div>
+
                 {video.status === 'rejected' && video.feedback && (
                     <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg text-sm text-red-800 dark:text-red-300">
                         <span className="font-bold block mb-1">Rejection Reason:</span>
@@ -108,22 +156,30 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
           {isInteractive && (
              <>
                 {/* Admin Note Display for Escalated Queue Items */}
-                {isEscalatedQueue && video.admin_notes && (
-                    <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg text-sm text-orange-800 dark:text-orange-200">
-                        <span className="font-bold block mb-1 flex items-center gap-1"><AlertTriangle size={12}/> Previous Admin Note:</span> 
-                        {video.admin_notes}
+                {isEscalatedQueue && video.admin_notes && !isActionSelected && (
+                    <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg text-sm text-orange-800 dark:text-orange-200 flex justify-between items-start">
+                        <div>
+                            <span className="font-bold block mb-1 flex items-center gap-1"><AlertTriangle size={12}/> Admin Note:</span> 
+                            {video.admin_notes}
+                        </div>
+                        <button 
+                            onClick={() => { setSelectedReviewId(video.id); setReviewAction('update_note'); setEscalationNote(video.admin_notes || ""); }}
+                            className="p-1 hover:bg-orange-200 rounded text-orange-600"
+                        >
+                            <Edit3 size={16} />
+                        </button>
                     </div>
                 )}
 
                 {isActionSelected ? (
                     <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
                         <p className="text-sm font-bold mb-2 dark:text-white">
-                            {reviewAction === 'reject' ? "Reason for Rejection:" : "Reason for Escalation:"}
+                            {reviewAction === 'reject' ? "Reason for Rejection:" : (reviewAction === 'escalate' ? "Optional Escalation Note:" : "Update Admin Note:")}
                         </p>
                         
                         <textarea 
                             className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 mb-3 text-sm dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-eggplant outline-none"
-                            placeholder={reviewAction === 'reject' ? "Violation of guidelines (required)..." : "Why are you unsure? Please provide context (required)..."}
+                            placeholder={reviewAction === 'reject' ? "Violation of guidelines (required)..." : "Add context for other admins (optional)..."}
                             value={reviewAction === 'reject' ? rejectReason : escalationNote}
                             onChange={(e) => reviewAction === 'reject' ? setRejectReason(e.target.value) : setEscalationNote(e.target.value)}
                             autoFocus
@@ -132,14 +188,14 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
                         <div className="flex gap-3">
                             <button 
                                 onClick={() => handleVerdict(video.id, reviewAction === 'reject' ? 'rejected' : 'needs_review')}
-                                disabled={reviewAction === 'reject' ? !rejectReason.trim() : !escalationNote.trim()}
+                                disabled={reviewAction === 'reject' && !rejectReason.trim()}
                                 className={`flex-1 py-2.5 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors ${
                                     reviewAction === 'reject' 
                                     ? 'bg-red-500 text-white hover:bg-red-600' 
                                     : 'bg-orange-500 text-white hover:bg-orange-600'
                                 }`}
                             >
-                                {reviewAction === 'reject' ? 'Confirm Reject' : 'Submit for Review'}
+                                {reviewAction === 'reject' ? 'Confirm Reject' : (reviewAction === 'update_note' ? 'Save Note' : 'Submit for Review')}
                             </button>
                             <button 
                                 onClick={() => { setSelectedReviewId(null); setReviewAction(null); setRejectReason(""); setEscalationNote(""); }}
@@ -179,7 +235,7 @@ export const AdminView = ({ ai, user, navigate, videos, setVideos }: { ai: Googl
 
   const TabButton = ({ id, label, count, icon: Icon }: any) => (
      <button 
-        onClick={() => { setAdminTab(id); setExpandedHistoryId(null); }}
+        onClick={() => { setAdminTab(id); setExpandedHistoryId(null); setSelectedReviewId(null); }}
         className={`flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-full transition-colors ${adminTab === id ? 'bg-eggplant text-white shadow-md' : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'}`}
      >
         {Icon && <Icon size={14} />}

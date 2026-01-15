@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Sparkles, Menu, X, Sun, Moon, LogOut } from "lucide-react";
+import { Sparkles, Menu, X, Sun, Moon, LogOut, AlertCircle } from "lucide-react";
 import { UserType } from "../types";
 import { SpotlightButton } from "./SpotlightButton";
 
 export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setDarkMode }: { activeTab: string, setActiveTab: (t: any) => void, user: UserType, onLogout: () => void, darkMode: boolean, setDarkMode: (m: boolean) => void }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const NavItem = ({ id, label }: { id: string, label: string }) => (
     <button 
@@ -23,7 +24,17 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
     }
   };
 
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+      setShowLogoutConfirm(false);
+      onLogout();
+  };
+
   return (
+    <>
     <header className={`sticky top-0 z-50 backdrop-blur-md border-b ${darkMode ? "bg-slate-900/90 border-slate-700" : "bg-cream/90 border-slate-200"}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
@@ -38,7 +49,9 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             <NavItem id="home" label="Who We Are" />
-            <NavItem id="gallery" label="Gallery" />
+            
+            {/* Gallery: Visible to guests and students, hidden for admins */}
+            {(!user || user.role !== 'admin') && <NavItem id="gallery" label="Gallery" />}
             
             {/* Share Story: Public or Student only */}
             {(!user || user.role === 'student') && <NavItem id="upload" label="Share Story" />}
@@ -71,7 +84,7 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
                 >
                    {user.name.charAt(0)}
                 </div>
-                <button onClick={onLogout} title="Log Out" className="text-slate-400 hover:text-red-500">
+                <button onClick={handleLogoutClick} title="Log Out" className="text-slate-400 hover:text-red-500">
                   <LogOut size={18} />
                 </button>
               </div>
@@ -97,7 +110,8 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
         <div className={`md:hidden p-4 border-t ${darkMode ? "bg-slate-900 border-slate-700" : "bg-cream border-slate-200"}`}>
           <div className="flex flex-col space-y-4">
             <NavItem id="home" label="Who We Are" />
-            <NavItem id="gallery" label="Gallery" />
+            
+            {(!user || user.role !== 'admin') && <NavItem id="gallery" label="Gallery" />}
             
             {(!user || user.role === 'student') && <NavItem id="upload" label="Share Story" />}
             
@@ -111,11 +125,41 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
                   {darkMode ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}
                </button>
                {!user && <button onClick={() => setActiveTab("login")} className="text-eggplant font-bold text-sm">Log In</button>}
-               {user && <button onClick={onLogout} className="text-red-500 font-bold text-sm">Log Out</button>}
+               {user && <button onClick={handleLogoutClick} className="text-red-500 font-bold text-sm">Log Out</button>}
             </div>
           </div>
         </div>
       )}
     </header>
+
+    {/* Logout Confirmation Modal */}
+    {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95">
+                <div className="flex items-center gap-3 text-red-500 mb-4">
+                    <AlertCircle size={24} />
+                    <h3 className="text-xl font-bold font-serif">Log Out?</h3>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 mb-6">
+                    Are you sure you want to log out? You will need to sign in again to access your account.
+                </p>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setShowLogoutConfirm(false)}
+                        className="flex-1 px-4 py-2 rounded-lg font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={confirmLogout}
+                        className="flex-1 px-4 py-2 rounded-lg font-bold bg-red-500 text-white hover:bg-red-600 transition-colors"
+                    >
+                        Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    )}
+    </>
   );
 };

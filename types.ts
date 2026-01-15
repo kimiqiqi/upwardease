@@ -4,6 +4,14 @@ export type UserType = {
   role: "student" | "admin";
 } | null;
 
+export type CommentType = {
+  id: number;
+  author: string;
+  text: string;
+  date: string;
+  authorId: string;
+};
+
 export type VideoType = {
   id: number;
   title: string;
@@ -15,9 +23,13 @@ export type VideoType = {
   color: string;
   likes: number;
   likedBy: string[];
-  comments: any[];
+  comments: CommentType[];
   status: string;
   feedback: string;
   description?: string;
   admin_notes?: string;
+  uploadedAt: string;
+  approvedAt?: string;
+  appealReason?: string;
+  videoUrl?: string;
 };

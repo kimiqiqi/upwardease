@@ -1,45 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { GoogleGenAI } from "@google/genai";
-import { ArrowLeft, Video, Heart, ThumbsUp, Lightbulb, Loader2, CheckCircle2, Upload } from "lucide-react";
-import { TOPIC_SYSTEM_PROMPT } from "../constants";
+import React, { useState } from "react";
+import { ArrowLeft, Video, Heart, ThumbsUp, Lightbulb, CheckCircle2, Upload } from "lucide-react";
 import { MissionSection } from "../components/MissionSection";
 import { TestimonialsSection } from "../components/TestimonialsSection";
 import { SpotlightButton } from "../components/SpotlightButton";
 
-export const HomeView = ({ ai, navigate }: { ai: GoogleGenAI, navigate: (tab: any) => void }) => {
-  const [topicData, setTopicData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+export const HomeView = ({ navigate }: { navigate: (tab: any) => void }) => {
   const [pollSelection, setPollSelection] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchTopic = async () => {
-      setLoading(true);
-      try {
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: "Generate this week's featured topic and poll.",
-          config: { 
-            systemInstruction: TOPIC_SYSTEM_PROMPT,
-            responseMimeType: "application/json"
-          }
-        });
-        const json = JSON.parse(response.text);
-        setTopicData(json);
-      } catch (e) {
-        console.error(e);
-        // Fallback
-        setTopicData({
-          topicTitle: "Balancing Study & Sleep",
-          topicDescription: "This week we're exploring how to get enough rest while keeping up with coursework. Share your routine!",
-          pollQuestion: "What is your biggest sleep disruptor?",
-          pollOptions: ["Late night scrolling", "Exam anxiety", "Caffeine", "Just not tired"]
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTopic();
-  }, []);
+  // Fixed topic data (AI features removed)
+  const topicData = {
+    topicTitle: "Balancing Study & Sleep",
+    topicDescription: "This week we're exploring how to get enough rest while keeping up with coursework. Share your routine!",
+    pollQuestion: "What is your biggest sleep disruptor?",
+    pollOptions: ["Late night scrolling", "Exam anxiety", "Caffeine", "Just not tired"]
+  };
 
   return (
     <div className="space-y-24 pt-8">
@@ -109,27 +83,17 @@ export const HomeView = ({ ai, navigate }: { ai: GoogleGenAI, navigate: (tab: an
             <div className="inline-block bg-accent-orange/20 text-accent-orange px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide">
               Weekly Focus
             </div>
-            {loading ? (
-              <div className="animate-pulse space-y-4">
-                <div className="h-10 bg-slate-100 dark:bg-slate-700 rounded w-3/4"></div>
-                <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-full"></div>
-                <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-5/6"></div>
-              </div>
-            ) : (
-              <>
-                <h2 className="font-serif text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">{topicData?.topicTitle}</h2>
-                <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">{topicData?.topicDescription}</p>
-                <div className="bg-cream dark:bg-slate-900 p-6 rounded-2xl inline-flex items-start gap-4 border border-slate-100 dark:border-slate-700">
-                   <div className="bg-yellow-100 p-2 rounded-full">
-                      <Lightbulb className="w-6 h-6 text-yellow-600 flex-shrink-0"/>
-                   </div>
-                   <div>
-                     <h4 className="font-bold text-slate-800 dark:text-white text-lg font-serif">Have a tip?</h4>
-                     <p className="text-slate-600 dark:text-slate-400">This topic affects us all. <span className="font-bold text-eggplant dark:text-teal-400 cursor-pointer hover:underline" onClick={() => navigate("upload")}>Upload a video</span> to share your experience!</p>
-                   </div>
-                </div>
-              </>
-            )}
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">{topicData.topicTitle}</h2>
+            <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">{topicData.topicDescription}</p>
+            <div className="bg-cream dark:bg-slate-900 p-6 rounded-2xl inline-flex items-start gap-4 border border-slate-100 dark:border-slate-700">
+               <div className="bg-yellow-100 p-2 rounded-full">
+                  <Lightbulb className="w-6 h-6 text-yellow-600 flex-shrink-0"/>
+               </div>
+               <div>
+                 <h4 className="font-bold text-slate-800 dark:text-white text-lg font-serif">Have a tip?</h4>
+                 <p className="text-slate-600 dark:text-slate-400">This topic affects us all. <span className="font-bold text-eggplant dark:text-teal-400 cursor-pointer hover:underline" onClick={() => navigate("upload")}>Upload a video</span> to share your experience!</p>
+               </div>
+            </div>
           </div>
           
           {/* POLL CARD */}
@@ -137,33 +101,25 @@ export const HomeView = ({ ai, navigate }: { ai: GoogleGenAI, navigate: (tab: an
              <div className="absolute -top-3 -right-3 bg-accent-green text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm transform rotate-6">
                Voice Your Opinion
              </div>
-             {loading ? (
-               <div className="flex items-center justify-center h-48 text-slate-400">
-                 <Loader2 className="animate-spin mr-2"/> Loading poll...
-               </div>
-             ) : (
-               <>
-                 <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-6 font-serif">{topicData?.pollQuestion}</h3>
-                 <div className="space-y-3">
-                   {topicData?.pollOptions?.map((opt: string, idx: number) => (
-                     <button 
-                       key={idx}
-                       onClick={() => setPollSelection(idx)}
-                       className={`w-full text-left p-4 rounded-xl border-2 transition-all relative overflow-hidden font-bold ${
-                         pollSelection === idx 
-                           ? "bg-white dark:bg-slate-800 border-eggplant text-eggplant dark:text-teal-300 dark:border-teal-300" 
-                           : "bg-white dark:bg-slate-800 border-transparent hover:border-slate-300 dark:hover:border-slate-600 dark:text-slate-300"
-                       }`}
-                     >
-                       <span className="relative z-10 flex items-center justify-between">
-                         {opt}
-                         {pollSelection === idx && <CheckCircle2 className="w-5 h-5"/>}
-                       </span>
-                     </button>
-                   ))}
-                 </div>
-               </>
-             )}
+             <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-6 font-serif">{topicData.pollQuestion}</h3>
+             <div className="space-y-3">
+               {topicData.pollOptions.map((opt: string, idx: number) => (
+                 <button 
+                   key={idx}
+                   onClick={() => setPollSelection(idx)}
+                   className={`w-full text-left p-4 rounded-xl border-2 transition-all relative overflow-hidden font-bold ${
+                     pollSelection === idx 
+                       ? "bg-white dark:bg-slate-800 border-eggplant text-eggplant dark:text-teal-300 dark:border-teal-300" 
+                       : "bg-white dark:bg-slate-800 border-transparent hover:border-slate-300 dark:hover:border-slate-600 dark:text-slate-300"
+                   }`}
+                 >
+                   <span className="relative z-10 flex items-center justify-between">
+                     {opt}
+                     {pollSelection === idx && <CheckCircle2 className="w-5 h-5"/>}
+                   </span>
+                 </button>
+               ))}
+             </div>
           </div>
         </div>
       </section>

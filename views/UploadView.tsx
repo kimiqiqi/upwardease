@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { User, AlertCircle, Upload, Loader2 } from "lucide-react";
-import { UserType } from "../types";
+import React, { useState, useRef } from "react";
+import { User, AlertCircle, Upload, Loader2, FileVideo } from "lucide-react";
+import { UserType, VideoType } from "../types";
 import { SpotlightButton } from "../components/SpotlightButton";
 
 export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navigate: any, setVideos: any }) => {
@@ -8,18 +8,34 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Study Tips");
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = ["Study Tips", "Mental Health", "Productivity", "Motivation", "Exam Prep"];
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          setSelectedFile(e.target.files[0]);
+      }
+  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (!selectedFile) {
+        alert("Please select a video file first.");
+        return;
+    }
+
     setUploading(true);
     // Simulate upload delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     
+    // Create a local URL for the video file so it can be played in the session
+    const videoUrl = URL.createObjectURL(selectedFile);
+
     // Add new pending video
-    const newVideo = {
+    const newVideo: VideoType = {
       id: Date.now(),
       title,
       description,
@@ -33,10 +49,12 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
       likedBy: [],
       comments: [],
       status: "pending",
-      feedback: ""
+      feedback: "",
+      uploadedAt: new Date().toISOString(),
+      videoUrl: videoUrl
     };
     
-    setVideos((prev: any) => [...prev, newVideo]);
+    setVideos((prev: VideoType[]) => [...prev, newVideo]);
     setUploading(false);
     navigate("profile"); // Redirect to profile to see pending status
   };
@@ -63,11 +81,34 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
             <p>All uploads are reviewed by our volunteer admins to ensure a safe environment. Your video will appear as "Pending" until approved.</p>
         </div>
         <form onSubmit={handleUpload} className="space-y-6">
-          <div className="border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-2xl p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-             <Upload size={48} className="text-slate-300 dark:text-slate-500 mb-4" />
-             <p className="font-bold text-slate-700 dark:text-slate-300">Drag and drop your video here</p>
-             <p className="text-sm text-slate-400 mt-2">MP4, WebM up to 50MB</p>
-             <button type="button" className="mt-6 bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 px-4 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-200">Select File</button>
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileSelect} 
+            accept="video/*" 
+            className="hidden" 
+          />
+          
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-2xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${selectedFile ? 'border-eggplant bg-purple-50 dark:bg-slate-700 dark:border-teal-500' : 'border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+          >
+             {selectedFile ? (
+                 <>
+                    <FileVideo size={48} className="text-eggplant dark:text-teal-400 mb-4" />
+                    <p className="font-bold text-eggplant dark:text-teal-400">{selectedFile.name}</p>
+                    <p className="text-sm text-slate-500 mt-2">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                    <button type="button" className="mt-6 text-red-500 text-sm font-bold hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}>Remove File</button>
+                 </>
+             ) : (
+                 <>
+                    <Upload size={48} className="text-slate-300 dark:text-slate-500 mb-4" />
+                    <p className="font-bold text-slate-700 dark:text-slate-300">Drag and drop your video here</p>
+                    <p className="text-sm text-slate-400 mt-2">MP4, WebM up to 50MB</p>
+                    <button type="button" className="mt-6 bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 px-4 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-200">Select File</button>
+                 </>
+             )}
           </div>
 
           <div>

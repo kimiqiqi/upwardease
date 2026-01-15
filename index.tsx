@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { GoogleGenAI } from "@google/genai";
 import { INITIAL_VIDEOS } from "./constants";
 import { UserType, VideoType } from "./types";
 import { Navbar } from "./components/Navbar";
@@ -25,8 +24,6 @@ const App = () => {
   // User interactions state (simulated session)
   const [starredVideoIds, setStarredVideoIds] = useState<number[]>([]);
   const [historyVideoIds, setHistoryVideoIds] = useState<number[]>([]);
-
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   // Handle Dark Mode
   useEffect(() => {
@@ -61,7 +58,7 @@ const App = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "home": return <HomeView ai={ai} navigate={setActiveTab} />;
+      case "home": return <HomeView navigate={setActiveTab} />;
       case "upload": return <UploadView user={user} navigate={setActiveTab} setVideos={setVideos} />;
       case "gallery": return <GalleryView videos={videos} onVideoClick={handleVideoClick} />;
       case "video-detail": 
@@ -78,10 +75,10 @@ const App = () => {
             /> : 
             <GalleryView videos={videos} onVideoClick={handleVideoClick} />;
       case "contact": return <ContactView />;
-      case "admin": return <AdminView ai={ai} user={user} navigate={setActiveTab} videos={videos} setVideos={setVideos} />;
-      case "profile": return <ProfileView user={user} videos={videos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={setActiveTab} />;
+      case "admin": return <AdminView user={user} navigate={setActiveTab} videos={videos} setVideos={setVideos} />;
+      case "profile": return <ProfileView user={user} videos={videos} setVideos={setVideos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={setActiveTab} />;
       case "login": return <LoginView onLogin={handleLogin} navigate={setActiveTab} />;
-      default: return <HomeView ai={ai} navigate={setActiveTab} />;
+      default: return <HomeView navigate={setActiveTab} />;
     }
   };
 
