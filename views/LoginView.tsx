@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, ShieldAlert } from "lucide-react";
+import { Eye, EyeOff, ShieldAlert, User, GraduationCap, School, Calendar } from "lucide-react";
+import { UserType } from "../types";
 import { SpotlightButton } from "../components/SpotlightButton";
 
-export const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "admin", name: string) => void, navigate: any }) => {
+export const LoginView = ({ onLogin, navigate }: { onLogin: (userData: Partial<UserType>) => void, navigate: any }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [role, setRole] = useState<"student" | "admin">("student");
   
@@ -11,6 +12,13 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
+  // New Profile Fields
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [grade, setGrade] = useState("");
+  const [school, setSchool] = useState("");
+
   const [error, setError] = useState<string | null>(null);
 
   // Validation Regex
@@ -20,6 +28,11 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "
     setError(null);
     if (!identifier) return "Email or Phone is required.";
     if (isRegistering) {
+       if (!name) return "Name is required.";
+       if (role === "student") {
+         if (!age) return "Age is required.";
+         if (!grade) return "Grade is required.";
+       }
        if (!passwordRegex.test(password)) {
          return "Password must be at least 8 characters, contain 1 uppercase letter, and 1 special character.";
        }
@@ -38,10 +51,29 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "
       return;
     }
 
-    // Simulate login logic
-    const name = role === "student" ? (isRegistering ? "New Student" : "Alex Student") : "Admin Volunteer";
-    onLogin(role, name);
+    // Pass all collected data
+    onLogin({
+        role,
+        name: isRegistering ? name : (role === "admin" ? "Admin Volunteer" : "Alex Student"),
+        age: isRegistering ? age : undefined,
+        grade: isRegistering ? grade : undefined,
+        school: isRegistering ? school : undefined,
+        id: isRegistering ? undefined : (role === "admin" ? 'user-admin' : 'user-123') // Demo logic: use fixed ID for login, new ID for register
+    });
   };
+
+  const gradeOptions = [
+      "Middle School (6-8)",
+      "Freshman (9th)",
+      "Sophomore (10th)",
+      "Junior (11th)",
+      "Senior (12th)",
+      "College Freshman",
+      "College Sophomore",
+      "College Junior",
+      "College Senior",
+      "Graduate Student"
+  ];
 
   return (
     <div className="max-w-md mx-auto py-12">
@@ -51,7 +83,7 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "
              {isRegistering ? "Join the Community" : "Welcome Back"}
            </h2>
            <p className="text-slate-500 text-sm">
-             {isRegistering ? "Create an account to start sharing." : "Log in to access your dashboard."}
+             {isRegistering ? "Create your profile to start sharing." : "Log in to access your dashboard."}
            </p>
         </div>
 
@@ -72,6 +104,79 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (role: "student" | "
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* Registration Fields */}
+          {isRegistering && (
+             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Full Name / Username</label>
+                    <div className="relative">
+                        <User className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                        <input 
+                        type="text" 
+                        required 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-eggplant outline-none transition-all dark:text-white"
+                        placeholder="How should we call you?"
+                        />
+                    </div>
+                </div>
+
+                {role === "student" && (
+                    <>
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Age</label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                    <input 
+                                    type="number" 
+                                    required 
+                                    min="13" max="100"
+                                    value={age}
+                                    onChange={(e) => setAge(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-eggplant outline-none transition-all dark:text-white"
+                                    placeholder="16"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Grade Level</label>
+                            <div className="relative">
+                                <GraduationCap className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                <select 
+                                    required
+                                    value={grade}
+                                    onChange={(e) => setGrade(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-eggplant outline-none transition-all dark:text-white appearance-none"
+                                >
+                                    <option value="">Select your grade</option>
+                                    {gradeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">School (Optional)</label>
+                            <div className="relative">
+                                <School className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                <input 
+                                type="text" 
+                                value={school}
+                                onChange={(e) => setSchool(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-eggplant outline-none transition-all dark:text-white"
+                                placeholder="High School Name"
+                                />
+                            </div>
+                        </div>
+                    </>
+                )}
+             </div>
+          )}
+
           <div>
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
               {role === "student" ? "Email or Phone Number" : "Admin Email"}

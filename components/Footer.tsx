@@ -26,9 +26,9 @@ export const Footer = ({ navigate, darkMode }: { navigate: (tab: any) => void, d
       </div>
       <div className="flex justify-center gap-6 text-sm font-bold mb-4">
           <button onClick={() => navigate("home")} className="hover:text-eggplant dark:hover:text-white">Who We Are</button>
-          <button className="hover:text-eggplant dark:hover:text-white">Anatomy of Kind Design</button>
-          <button onClick={() => navigate("gallery")} className="hover:text-eggplant dark:hover:text-white">Our Work</button>
-          <button onClick={() => navigate("contact")} className="hover:text-eggplant dark:hover:text-white">Email Us</button>
+          <button className="hover:text-eggplant dark:hover:text-white">Terms of Service</button>
+          <button onClick={() => navigate("gallery")} className="hover:text-eggplant dark:hover:text-white">Gallery</button>
+          <button onClick={() => navigate("contact")} className="hover:text-eggplant dark:hover:text-white">Contact Us</button>
       </div>
       <p className="text-xs opacity-60">© UpwardEase {new Date().getFullYear()}. All rights reserved.</p>
     </footer>

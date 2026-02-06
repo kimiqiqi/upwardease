@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Search, PlayCircle } from "lucide-react";
-import { VideoType } from "../types";
+import { Search, PlayCircle, User } from "lucide-react";
+import { VideoType, UserType } from "../types";
 
-export const GalleryView = ({ videos, onVideoClick }: { videos: VideoType[], onVideoClick: (id: number) => void }) => {
+export const GalleryView = ({ videos, onVideoClick, navigate, user }: { videos: VideoType[], onVideoClick: (id: number) => void, navigate: any, user: UserType }) => {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const categories = ["All", "Study Tips", "Mental Health", "Productivity", "Motivation", "Exam Prep"];
@@ -13,11 +13,18 @@ export const GalleryView = ({ videos, onVideoClick }: { videos: VideoType[], onV
     if (filter !== "All" && v.category !== filter) return false;
     if (search) {
         const lower = search.toLowerCase();
-        // Safe check for description as initial videos might not have it in all cases (though added in mock)
         return v.title.toLowerCase().includes(lower) || (v as any).description?.toLowerCase().includes(lower) || v.author.toLowerCase().includes(lower);
     }
     return true;
   });
+
+  const handleAvatarClick = (e: React.MouseEvent, uploaderId: string) => {
+      e.stopPropagation();
+      if (user && uploaderId === user.id) {
+          navigate("profile");
+      }
+      // If we had public profiles, we would navigate to them here for other users
+  };
 
   return (
     <div className="space-y-8">
@@ -72,8 +79,17 @@ export const GalleryView = ({ videos, onVideoClick }: { videos: VideoType[], onV
                     <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-1">{video.title}</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 flex-1">{video.description}</p>
                     <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-700">
-                        <span className="font-bold">{video.author}</span>
-                        <span>{video.grade}</span>
+                        <div className="flex items-center gap-2">
+                             <div 
+                                onClick={(e) => handleAvatarClick(e, video.uploaderId)}
+                                className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-[10px] font-bold hover:ring-2 ring-eggplant transition-all"
+                                title={video.author}
+                             >
+                                 {video.author.charAt(0)}
+                             </div>
+                             <span className="font-bold">{video.author}</span>
+                        </div>
+                        <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">{video.grade}</span>
                     </div>
                     </div>
                 </div>

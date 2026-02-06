@@ -16,6 +16,7 @@ import { LoginView } from "./views/LoginView";
 const App = () => {
   const [activeTab, setActiveTab] = useState<"home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail" | "profile">("home");
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
+  const [previousTab, setPreviousTab] = useState<string>("gallery");
   const [user, setUser] = useState<UserType>(null);
   const [darkMode, setDarkMode] = useState(false);
   
@@ -34,11 +35,27 @@ const App = () => {
     }
   }, [darkMode]);
 
-  const handleLogin = (role: "student" | "admin", name: string) => {
-    // Determine ID based on role for demo persistence logic
-    const id = role === 'admin' ? 'user-admin' : 'user-123';
-    setUser({ id, name, role });
-    setActiveTab("home");
+  const handleLogin = (userData: Partial<UserType>) => {
+    // Generate a mock ID if not provided (simulating backend)
+    const id = userData.role === 'admin' ? 'user-admin' : `user-${Date.now()}`;
+    
+    const newUser = {
+        id: userData.id || id,
+        name: userData.name || "User",
+        role: userData.role || "student",
+        grade: userData.grade,
+        age: userData.age,
+        school: userData.school
+    };
+
+    setUser(newUser);
+    
+    // Redirect students to profile to see their new info, admins to home or dashboard
+    if (newUser.role === 'student') {
+        setActiveTab("profile");
+    } else {
+        setActiveTab("home");
+    }
   };
 
   const handleLogout = () => {
@@ -47,6 +64,7 @@ const App = () => {
   };
 
   const handleVideoClick = (id: number) => {
+    setPreviousTab(activeTab);
     setSelectedVideoId(id);
     // Add to history if not already present
     setHistoryVideoIds(prev => {
@@ -60,7 +78,7 @@ const App = () => {
     switch (activeTab) {
       case "home": return <HomeView navigate={setActiveTab} />;
       case "upload": return <UploadView user={user} navigate={setActiveTab} setVideos={setVideos} />;
-      case "gallery": return <GalleryView videos={videos} onVideoClick={handleVideoClick} />;
+      case "gallery": return <GalleryView videos={videos} onVideoClick={handleVideoClick} navigate={setActiveTab} user={user} />;
       case "video-detail": 
         const video = videos.find(v => v.id === selectedVideoId);
         return video ? 
@@ -72,11 +90,12 @@ const App = () => {
                 starredVideoIds={starredVideoIds}
                 setStarredVideoIds={setStarredVideoIds}
                 videos={videos}
+                previousTab={previousTab}
             /> : 
-            <GalleryView videos={videos} onVideoClick={handleVideoClick} />;
+            <GalleryView videos={videos} onVideoClick={handleVideoClick} navigate={setActiveTab} user={user} />;
       case "contact": return <ContactView />;
-      case "admin": return <AdminView user={user} navigate={setActiveTab} videos={videos} setVideos={setVideos} />;
-      case "profile": return <ProfileView user={user} videos={videos} setVideos={setVideos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={setActiveTab} />;
+      case "admin": return <AdminView user={user} navigate={setActiveTab} videos={videos} setVideos={setVideos} onVideoClick={handleVideoClick} />;
+      case "profile": return <ProfileView user={user} setUser={setUser} videos={videos} setVideos={setVideos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={setActiveTab} />;
       case "login": return <LoginView onLogin={handleLogin} navigate={setActiveTab} />;
       default: return <HomeView navigate={setActiveTab} />;
     }

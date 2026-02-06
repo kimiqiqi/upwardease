@@ -34,14 +34,14 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
     // Create a local URL for the video file so it can be played in the session
     const videoUrl = URL.createObjectURL(selectedFile);
 
-    // Add new pending video
+    // Add new pending video with user profile data
     const newVideo: VideoType = {
       id: Date.now(),
       title,
       description,
       author: user.name,
       uploaderId: user.id,
-      grade: "Student", // Simplified for demo
+      grade: user.grade || "Community Member", // Connect grade info here
       views: 0,
       category: category,
       color: "bg-gray-100",

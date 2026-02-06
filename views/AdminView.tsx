@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp, Calendar, Edit3, MessageCircle } from "lucide-react";
+import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp, Calendar, Edit3, MessageCircle, Flag } from "lucide-react";
 import { UserType, VideoType } from "../types";
 
-export const AdminView = ({ user, navigate, videos, setVideos }: { user: UserType, navigate: any, videos: VideoType[], setVideos: any }) => {
+export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: { user: UserType, navigate: any, videos: VideoType[], setVideos: any, onVideoClick: (id: number) => void }) => {
   const [rejectReason, setRejectReason] = useState("");
   const [escalationNote, setEscalationNote] = useState("");
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
@@ -29,7 +29,8 @@ export const AdminView = ({ user, navigate, videos, setVideos }: { user: UserTyp
               feedback: status === 'rejected' ? rejectReason : v.feedback,
               admin_notes: (status === 'needs_review' || reviewAction === 'update_note') ? escalationNote : v.admin_notes,
               approvedAt: status === 'approved' ? new Date().toISOString() : v.approvedAt,
-              appealReason: status !== 'needs_review' ? undefined : v.appealReason // Clear appeal reason if resolved, unless kept in needs_review
+              appealReason: status !== 'needs_review' ? undefined : v.appealReason, // Clear appeal reason if resolved, unless kept in needs_review
+              reportReason: status !== 'needs_review' ? undefined : v.reportReason // Clear report reason if resolved, unless kept
             } 
           : v
       ));
@@ -43,11 +44,6 @@ export const AdminView = ({ user, navigate, videos, setVideos }: { user: UserTyp
 
   if (!user || user.role !== "admin") return null;
 
-  // Filter videos for the queue
-  // If a video has an appealReason, it should appear in the queue or escalated? 
-  // For this logic, let's put appeals in 'needs_review' or 'queue' based on status.
-  // Assuming appeals set status to 'needs_review'.
-  
   const pendingVideos = videos.filter(v => v.status === 'pending');
   const needsReviewVideos = videos.filter(v => v.status === 'needs_review');
   
@@ -83,16 +79,25 @@ export const AdminView = ({ user, navigate, videos, setVideos }: { user: UserTyp
 
     return (
       <div key={video.id} className={`bg-white dark:bg-slate-800 p-6 rounded-2xl border ${!isInteractive ? 'border-none shadow-none p-0' : 'border-slate-200 dark:border-slate-700 shadow-sm'} animate-in fade-in slide-in-from-top-4 duration-500`}>
-          <div className="flex gap-4 mb-4">
-              <div className={`w-32 h-20 ${video.color} rounded-lg flex items-center justify-center shrink-0`}>
+          <div 
+            className={`flex gap-4 mb-4 ${isInteractive ? 'cursor-pointer group' : ''}`}
+            onClick={() => isInteractive && onVideoClick(video.id)}
+            title={isInteractive ? "Click to view details" : ""}
+          >
+              <div className={`w-32 h-20 ${video.color} rounded-lg flex items-center justify-center shrink-0 ${isInteractive ? 'group-hover:opacity-80 transition-opacity' : ''}`}>
                   <Video className="text-slate-400" />
               </div>
-              <div className="flex-1">
+              <div className={`flex-1 ${isInteractive ? 'group-hover:opacity-80 transition-opacity' : ''}`}>
                   <h4 className="font-bold text-lg dark:text-white flex items-center justify-between">
                       {video.title}
                       {video.appealReason && (
                           <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-bold flex items-center gap-1">
                               <MessageCircle size={12}/> APPEAL
+                          </span>
+                      )}
+                      {video.reportReason && (
+                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                              <Flag size={12}/> REPORTED
                           </span>
                       )}
                   </h4>
@@ -115,6 +120,14 @@ export const AdminView = ({ user, navigate, videos, setVideos }: { user: UserTyp
               <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg text-sm text-purple-900 dark:text-purple-200">
                   <span className="font-bold block mb-1">Student Appeal Message:</span>
                   "{video.appealReason}"
+              </div>
+          )}
+          
+          {/* Display Report Reason Highlight */}
+          {video.reportReason && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-900 dark:text-red-200">
+                  <span className="font-bold block mb-1 flex items-center gap-1"><Flag size={12}/> Reported by User:</span>
+                  "{video.reportReason}"
               </div>
           )}
 
@@ -289,7 +302,7 @@ export const AdminView = ({ user, navigate, videos, setVideos }: { user: UserTyp
                     <div className="space-y-4">
                         <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex gap-3 text-sm text-orange-800 mb-4">
                             <AlertTriangle size={20} className="shrink-0"/>
-                            <p>These videos were marked as "Not Sure" by other admins. Please review them carefully.</p>
+                            <p>These videos were marked as "Not Sure" or flagged by users. Please review them carefully.</p>
                         </div>
                         {needsReviewVideos.map(v => renderVideoCard(v, true, true))}
                     </div>

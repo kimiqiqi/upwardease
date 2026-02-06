@@ -2,6 +2,9 @@ export type UserType = {
   id: string;
   name: string;
   role: "student" | "admin";
+  grade?: string;
+  age?: string;
+  school?: string;
 } | null;
 
 export type CommentType = {
@@ -10,6 +13,8 @@ export type CommentType = {
   text: string;
   date: string;
   authorId: string;
+  likes: number;
+  likedBy: string[];
 };
 
 export type VideoType = {
@@ -31,5 +36,6 @@ export type VideoType = {
   uploadedAt: string;
   approvedAt?: string;
   appealReason?: string;
+  reportReason?: string;
   videoUrl?: string;
 };
