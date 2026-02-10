@@ -5,6 +5,7 @@ export type UserType = {
   grade?: string;
   age?: string;
   school?: string;
+  bio?: string;
 } | null;
 
 export type CommentType = {

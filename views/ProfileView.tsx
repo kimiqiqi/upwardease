@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Plus, AlertCircle, PlayCircle, RotateCcw, Send, GraduationCap, School, MapPin, Settings, X, Save, User, ArrowDown, Loader2 } from "lucide-react";
+import { Plus, AlertCircle, PlayCircle, RotateCcw, Send, GraduationCap, School, MapPin, Settings, X, Save, User, ArrowDown, Loader2, Quote } from "lucide-react";
 import { UserType, VideoType } from "../types";
 import { FadeIn } from "../components/FadeIn";
 
@@ -117,7 +117,7 @@ export const ProfileView = ({
     
     // Edit Profile State
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", grade: "", school: "", age: "" });
+    const [editForm, setEditForm] = useState({ name: "", grade: "", school: "", age: "", bio: "" });
 
     // Pull to Refresh State
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -150,7 +150,8 @@ export const ProfileView = ({
             name: user.name,
             grade: user.grade || "",
             school: user.school || "",
-            age: user.age || ""
+            age: user.age || "",
+            bio: user.bio || ""
         });
         setIsEditing(true);
     };
@@ -162,7 +163,8 @@ export const ProfileView = ({
             name: editForm.name,
             grade: editForm.grade,
             school: editForm.school,
-            age: editForm.age
+            age: editForm.age,
+            bio: editForm.bio
         });
         setIsEditing(false);
     };
@@ -224,7 +226,7 @@ export const ProfileView = ({
             {/* Edit Profile Modal */}
             {isEditing && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 overflow-y-auto max-h-[90vh]">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-serif font-bold dark:text-white">Edit Profile</h3>
                             <button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
@@ -242,6 +244,18 @@ export const ProfileView = ({
                                         value={editForm.name}
                                         onChange={(e) => setEditForm({...editForm, name: e.target.value})}
                                         className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-eggplant outline-none dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Bio</label>
+                                <div className="relative">
+                                    <Quote className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                    <textarea 
+                                        value={editForm.bio}
+                                        onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-eggplant outline-none dark:text-white min-h-[100px]"
+                                        placeholder="Tell us a little bit about yourself..."
                                     />
                                 </div>
                             </div>
@@ -297,23 +311,33 @@ export const ProfileView = ({
             )}
 
             <FadeIn direction="down">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                    <div className="flex items-start gap-4">
-                        <div className="w-20 h-20 rounded-full bg-accent-green flex items-center justify-center text-white text-3xl font-serif font-bold shrink-0 shadow-md">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+                    <div className="flex items-start gap-6">
+                        <div className="w-24 h-24 rounded-full bg-accent-green flex items-center justify-center text-white text-4xl font-serif font-bold shrink-0 shadow-lg border-4 border-white dark:border-slate-800">
                             {user.name.charAt(0)}
                         </div>
-                        <div>
-                            <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">{user.name}</h2>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500 mt-1">
-                                <span className="font-bold text-eggplant dark:text-teal-300">{user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</span>
-                                {user.grade && <span className="flex items-center gap-1 text-xs"><GraduationCap size={14}/> {user.grade}</span>}
-                                {user.school && <span className="flex items-center gap-1 text-xs"><School size={14}/> {user.school}</span>}
-                                {user.age && <span className="flex items-center gap-1 text-xs"><MapPin size={14}/> {user.age} y/o</span>}
+                        <div className="space-y-2">
+                            <div>
+                                <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">{user.name}</h2>
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500 text-sm">
+                                    <span className="font-bold text-eggplant dark:text-teal-300">{user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</span>
+                                    {user.grade && <span className="flex items-center gap-1"><GraduationCap size={14}/> {user.grade}</span>}
+                                    {user.school && <span className="flex items-center gap-1"><School size={14}/> {user.school}</span>}
+                                    {user.age && <span className="flex items-center gap-1"><MapPin size={14}/> {user.age} y/o</span>}
+                                </div>
                             </div>
+                            
+                            {user.bio && (
+                                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 max-w-xl">
+                                    <p className="text-slate-600 dark:text-slate-300 text-sm italic leading-relaxed">
+                                        "{user.bio}"
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                     
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 self-start">
                         <button 
                             onClick={handleEditClick}
                             className="bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-4 py-3 rounded-full font-bold hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center gap-2 shadow-sm"
