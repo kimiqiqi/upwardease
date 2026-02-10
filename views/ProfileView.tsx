@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Plus, AlertCircle, PlayCircle, RotateCcw, Send, GraduationCap, School, MapPin, Settings, X, Save, User, ArrowDown, Loader2 } from "lucide-react";
 import { UserType, VideoType } from "../types";
+import { FadeIn } from "../components/FadeIn";
 
 // Extracted VideoList component to prevent re-rendering issues
 const VideoList = ({ 
@@ -26,8 +27,8 @@ const VideoList = ({
     
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map(video => (
-                <div key={video.id} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
+            {items.map((video, index) => (
+                <FadeIn key={video.id} delay={index * 50} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
                     <div onClick={() => video.status === 'approved' && onVideoClick(video.id)} className={`aspect-video ${video.color} relative flex items-center justify-center ${video.status === 'approved' ? 'cursor-pointer' : 'opacity-75'}`}>
                         <PlayCircle size={48} className="text-slate-900/50" />
                         {showStatus && (
@@ -85,7 +86,7 @@ const VideoList = ({
                             </div>
                         )}
                     </div>
-                </div>
+                </FadeIn>
             ))}
         </div>
     );
@@ -295,45 +296,47 @@ export const ProfileView = ({
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                <div className="flex items-start gap-4">
-                    <div className="w-20 h-20 rounded-full bg-accent-green flex items-center justify-center text-white text-3xl font-serif font-bold shrink-0 shadow-md">
-                        {user.name.charAt(0)}
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">{user.name}</h2>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500 mt-1">
-                             <span className="font-bold text-eggplant dark:text-teal-300">{user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</span>
-                             {user.grade && <span className="flex items-center gap-1 text-xs"><GraduationCap size={14}/> {user.grade}</span>}
-                             {user.school && <span className="flex items-center gap-1 text-xs"><School size={14}/> {user.school}</span>}
-                             {user.age && <span className="flex items-center gap-1 text-xs"><MapPin size={14}/> {user.age} y/o</span>}
+            <FadeIn direction="down">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                    <div className="flex items-start gap-4">
+                        <div className="w-20 h-20 rounded-full bg-accent-green flex items-center justify-center text-white text-3xl font-serif font-bold shrink-0 shadow-md">
+                            {user.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">{user.name}</h2>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500 mt-1">
+                                <span className="font-bold text-eggplant dark:text-teal-300">{user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</span>
+                                {user.grade && <span className="flex items-center gap-1 text-xs"><GraduationCap size={14}/> {user.grade}</span>}
+                                {user.school && <span className="flex items-center gap-1 text-xs"><School size={14}/> {user.school}</span>}
+                                {user.age && <span className="flex items-center gap-1 text-xs"><MapPin size={14}/> {user.age} y/o</span>}
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div className="flex gap-3">
-                    <button 
-                        onClick={handleEditClick}
-                        className="bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-4 py-3 rounded-full font-bold hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center gap-2 shadow-sm"
-                    >
-                        <Settings size={20} /> <span className="hidden sm:inline">Settings</span>
-                    </button>
-                    {tab === 'uploads' && (
+                    
+                    <div className="flex gap-3">
                         <button 
-                            onClick={() => navigate("upload")}
-                            className="bg-eggplant text-white border border-eggplant px-6 py-3 rounded-full font-bold hover:bg-eggplant-dark transition-colors flex items-center gap-2 shadow-sm"
+                            onClick={handleEditClick}
+                            className="bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-4 py-3 rounded-full font-bold hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center gap-2 shadow-sm"
                         >
-                            <Plus size={20} /> Share a New Story
+                            <Settings size={20} /> <span className="hidden sm:inline">Settings</span>
                         </button>
-                    )}
+                        {tab === 'uploads' && (
+                            <button 
+                                onClick={() => navigate("upload")}
+                                className="bg-eggplant text-white border border-eggplant px-6 py-3 rounded-full font-bold hover:bg-eggplant-dark transition-colors flex items-center gap-2 shadow-sm"
+                            >
+                                <Plus size={20} /> Share a New Story
+                            </button>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            <div className="border-b border-slate-200 dark:border-slate-700 flex gap-6 overflow-x-auto">
-                <button onClick={() => setTab("uploads")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "uploads" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>My Uploads</button>
-                <button onClick={() => setTab("favorites")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "favorites" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>Favorites</button>
-                <button onClick={() => setTab("history")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "history" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>Watch History</button>
-            </div>
+                <div className="border-b border-slate-200 dark:border-slate-700 flex gap-6 overflow-x-auto">
+                    <button onClick={() => setTab("uploads")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "uploads" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>My Uploads</button>
+                    <button onClick={() => setTab("favorites")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "favorites" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>Favorites</button>
+                    <button onClick={() => setTab("history")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "history" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>Watch History</button>
+                </div>
+            </FadeIn>
 
             {/* Pull to Refresh Container */}
             <div 
@@ -368,7 +371,7 @@ export const ProfileView = ({
                 >
                     {tab === "uploads" && (
                         <div>
-                            <div className="mb-6 bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 p-4 rounded-xl flex items-start gap-3">
+                            <FadeIn className="mb-6 bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 p-4 rounded-xl flex items-start gap-3">
                                 <AlertCircle className="text-blue-500 shrink-0 mt-0.5" size={18} />
                                 <div className="text-sm text-slate-600 dark:text-slate-300">
                                 <p className="font-bold mb-1">Upload Status Guide</p>
@@ -378,7 +381,7 @@ export const ProfileView = ({
                                     <li><span className="text-red-600 font-bold">Rejected:</span> Does not meet guidelines. You may appeal if you believe this is an error.</li>
                                 </ul>
                                 </div>
-                            </div>
+                            </FadeIn>
                             <VideoList items={myUploads} showStatus={true} {...commonListProps} />
                         </div>
                     )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp, Calendar, Edit3, MessageCircle, Flag } from "lucide-react";
 import { UserType, VideoType } from "../types";
+import { FadeIn } from "../components/FadeIn";
 
 export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: { user: UserType, navigate: any, videos: VideoType[], setVideos: any, onVideoClick: (id: number) => void }) => {
   const [rejectReason, setRejectReason] = useState("");
@@ -45,6 +46,8 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
   if (!user || user.role !== "admin") return null;
 
   const pendingVideos = videos.filter(v => v.status === 'pending');
+  const approvedVideos = videos.filter(v => v.status === 'approved');
+  const rejectedVideos = videos.filter(v => v.status === 'rejected');
   const needsReviewVideos = videos.filter(v => v.status === 'needs_review');
   
   const historyVideos = videos.filter(v => {
@@ -78,7 +81,7 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
     const isActionSelected = selectedReviewId === video.id;
 
     return (
-      <div key={video.id} className={`bg-white dark:bg-slate-800 p-6 rounded-2xl border ${!isInteractive ? 'border-none shadow-none p-0' : 'border-slate-200 dark:border-slate-700 shadow-sm'} animate-in fade-in slide-in-from-top-4 duration-500`}>
+      <FadeIn key={video.id} className={`bg-white dark:bg-slate-800 p-6 rounded-2xl border ${!isInteractive ? 'border-none shadow-none p-0' : 'border-slate-200 dark:border-slate-700 shadow-sm'}`}>
           <div 
             className={`flex gap-4 mb-4 ${isInteractive ? 'cursor-pointer group' : ''}`}
             onClick={() => isInteractive && onVideoClick(video.id)}
@@ -242,7 +245,7 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
                 )}
              </>
           )}
-      </div>
+      </FadeIn>
     );
   };
 
@@ -259,7 +262,7 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
 
   return (
     <div className="max-w-5xl mx-auto py-8">
-       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+       <FadeIn direction="down" className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white flex items-center gap-3">
                 <ShieldAlert className="text-eggplant dark:text-teal-300" /> Admin Dashboard
             </h2>
@@ -268,7 +271,37 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
                  <TabButton id="escalated" label="Needs Review" count={needsReviewVideos.length} icon={AlertTriangle} />
                  <TabButton id="history" label="History" icon={History} />
             </div>
-       </div>
+       </FadeIn>
+
+       <FadeIn direction="down" delay={100} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm">
+                 <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                    <Video size={24} />
+                 </div>
+                 <div>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{pendingVideos.length}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Pending</p>
+                 </div>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm">
+                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                    <CheckCircle2 size={24} />
+                 </div>
+                 <div>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{approvedVideos.length}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Approved</p>
+                 </div>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm">
+                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                    <X size={24} />
+                 </div>
+                 <div>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{rejectedVideos.length}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Rejected</p>
+                 </div>
+            </div>
+       </FadeIn>
 
        <div className="w-full">
           <div className="space-y-6">
@@ -280,11 +313,13 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
             
             {adminTab === 'queue' && (
                 pendingVideos.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-800 p-12 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
-                        <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500"/>
-                        <p className="font-bold text-lg">All caught up!</p>
-                        <p className="text-sm">No new videos waiting for review.</p>
-                    </div>
+                    <FadeIn>
+                        <div className="bg-white dark:bg-slate-800 p-12 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
+                            <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500"/>
+                            <p className="font-bold text-lg">All caught up!</p>
+                            <p className="text-sm">No new videos waiting for review.</p>
+                        </div>
+                    </FadeIn>
                 ) : (
                     <div className="space-y-4">
                         {pendingVideos.map(v => renderVideoCard(v, true, false))}
@@ -294,16 +329,18 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
 
             {adminTab === 'escalated' && (
                 needsReviewVideos.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-800 p-12 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
-                        <CheckCircle2 size={48} className="mx-auto mb-4 text-slate-300"/>
-                        <p>No escalated items.</p>
-                    </div>
+                    <FadeIn>
+                        <div className="bg-white dark:bg-slate-800 p-12 rounded-2xl text-center text-slate-500 border border-slate-200 dark:border-slate-700">
+                            <CheckCircle2 size={48} className="mx-auto mb-4 text-slate-300"/>
+                            <p>No escalated items.</p>
+                        </div>
+                    </FadeIn>
                 ) : (
                     <div className="space-y-4">
-                        <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex gap-3 text-sm text-orange-800 mb-4">
+                        <FadeIn className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex gap-3 text-sm text-orange-800 mb-4">
                             <AlertTriangle size={20} className="shrink-0"/>
                             <p>These videos were marked as "Not Sure" or flagged by users. Please review them carefully.</p>
-                        </div>
+                        </FadeIn>
                         {needsReviewVideos.map(v => renderVideoCard(v, true, true))}
                     </div>
                 )
@@ -312,7 +349,7 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
             {adminTab === 'history' && (
                 <div className="space-y-4">
                      {/* Search and Filter UI */}
-                     <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                     <FadeIn className="flex flex-col sm:flex-row gap-4 mb-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input 
@@ -338,16 +375,17 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
                                 </button>
                             ))}
                         </div>
-                     </div>
+                     </FadeIn>
 
                      {historyVideos.length === 0 ? (
                         <p className="text-slate-500 text-center py-8">No matching records found.</p>
                      ) : (
-                        historyVideos.map(video => {
+                        historyVideos.map((video, index) => {
                             const isExpanded = expandedHistoryId === video.id;
                             return (
-                                <div 
+                                <FadeIn 
                                     key={video.id} 
+                                    delay={index * 50}
                                     onClick={() => setExpandedHistoryId(isExpanded ? null : video.id)}
                                     className={`bg-white dark:bg-slate-800 rounded-xl border transition-all cursor-pointer ${
                                         isExpanded 
@@ -378,7 +416,7 @@ export const AdminView = ({ user, navigate, videos, setVideos, onVideoClick }: {
                                              {renderVideoCard(video, false)}
                                          </div>
                                      )}
-                                </div>
+                                </FadeIn>
                             );
                         })
                      )}

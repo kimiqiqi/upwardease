@@ -25,6 +25,7 @@ export type VideoType = {
   grade: string;
   views: number;
   category: string;
+  tags?: string[];
   color: string;
   likes: number;
   likedBy: string[];

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Eye, EyeOff, ShieldAlert, User, GraduationCap, School, Calendar } from "lucide-react";
 import { UserType } from "../types";
 import { SpotlightButton } from "../components/SpotlightButton";
+import { FadeIn } from "../components/FadeIn";
 
 export const LoginView = ({ onLogin, navigate }: { onLogin: (userData: Partial<UserType>) => void, navigate: any }) => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -77,6 +78,7 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (userData: Partial<U
 
   return (
     <div className="max-w-md mx-auto py-12">
+      <FadeIn direction="up">
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-700">
         <div className="text-center mb-8">
            <h2 className="text-3xl font-serif font-bold text-eggplant dark:text-white mb-2">
@@ -247,6 +249,7 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (userData: Partial<U
            </p>
         </div>
       </div>
+      </FadeIn>
     </div>
   );
 };

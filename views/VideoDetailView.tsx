@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { ArrowLeft, PlayCircle, Star, Heart, Send, User, Share2, ThumbsUp, Flag, AlertTriangle, X, CheckCircle2, HelpCircle, ShieldAlert, Lightbulb, Link as LinkIcon, Facebook, Twitter } from "lucide-react";
+import { ArrowLeft, PlayCircle, Star, Heart, Send, User, Share2, ThumbsUp, Flag, AlertTriangle, X, CheckCircle2, HelpCircle, ShieldAlert, Lightbulb, Link as LinkIcon, Facebook, Twitter, Lock, FileText } from "lucide-react";
 import { VideoType, UserType, CommentType } from "../types";
+import { FadeIn } from "../components/FadeIn";
 
 export const VideoDetailView = ({ 
   video, 
@@ -29,15 +30,19 @@ export const VideoDetailView = ({
   
   // Admin Review State
   const [adminAction, setAdminAction] = useState<'approve' | 'reject' | 'escalate' | null>(null);
-  const [adminNote, setAdminNote] = useState("");
+  const [internalNote, setInternalNote] = useState(video.admin_notes || "");
+  const [rejectionFeedback, setRejectionFeedback] = useState("");
 
   const MAX_COMMENT_LENGTH = 500;
   
   const isLiked = user && video.likedBy?.includes(user.id);
   const isStarred = starredVideoIds.includes(video.id);
   
-  // Check if current user is admin and video is in a reviewable state
-  const isAdminReview = user?.role === 'admin' && (video.status === 'pending' || video.status === 'needs_review');
+  // Check if current user is admin
+  const isAdmin = user?.role === 'admin';
+  // Check if video is in a reviewable state
+  const isReviewable = video.status === 'pending' || video.status === 'needs_review';
+  const showAdminReviewPanel = isAdmin && isReviewable;
 
   const handleToggleLike = () => {
     if (!user) {
@@ -120,14 +125,12 @@ export const VideoDetailView = ({
         url: window.location.href
     };
 
-    // Try native share for mobile/supported browsers
     if (navigator.share) {
         try {
             await navigator.share(shareData);
             return;
         } catch (err) {
             console.log('Error sharing:', err);
-            // If native share fails or is cancelled, fall back to modal
         }
     }
     
@@ -178,8 +181,8 @@ export const VideoDetailView = ({
               return { 
                   ...v, 
                   status, 
-                  feedback: status === 'rejected' ? adminNote : v.feedback,
-                  admin_notes: status === 'needs_review' ? adminNote : v.admin_notes,
+                  feedback: status === 'rejected' ? rejectionFeedback : v.feedback,
+                  admin_notes: internalNote,
                   approvedAt: status === 'approved' ? new Date().toISOString() : v.approvedAt,
                   appealReason: status !== 'needs_review' ? undefined : v.appealReason,
                   reportReason: status !== 'needs_review' ? undefined : v.reportReason
@@ -328,6 +331,7 @@ export const VideoDetailView = ({
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
+             <FadeIn>
              <div className="rounded-3xl overflow-hidden shadow-lg bg-black relative group aspect-video">
                 {video.videoUrl ? (
                     <video 
@@ -345,7 +349,7 @@ export const VideoDetailView = ({
                     </div>
                 )}
                 
-                {user && !isAdminReview && (
+                {user && !showAdminReviewPanel && (
                     <button 
                         onClick={handleToggleStar}
                         className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-md transition-colors z-10 ${isStarred ? "bg-yellow-400 text-white" : "bg-black/30 text-white hover:bg-black/50"}`}
@@ -355,16 +359,30 @@ export const VideoDetailView = ({
                     </button>
                 )}
              </div>
+             </FadeIn>
              
              {/* Admin Review Controls */}
-             {isAdminReview && (
+             {showAdminReviewPanel && (
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-4">
                     <h3 className="text-xl font-bold font-serif mb-2 flex items-center gap-2 text-slate-900 dark:text-white">
                         <ShieldAlert className="text-eggplant dark:text-teal-400" /> Admin Review
                     </h3>
                     <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm">
-                        Review this content against community guidelines. Your decision will immediately update the video status.
+                        Review this content against community guidelines.
                     </p>
+
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                            <Lock size={14} className="text-slate-400"/> Internal Admin Notes <span className="text-slate-400 font-normal text-xs">(Visible only to admins)</span>
+                        </label>
+                        <textarea 
+                            value={internalNote}
+                            onChange={(e) => setInternalNote(e.target.value)}
+                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-eggplant outline-none text-sm"
+                            rows={3}
+                            placeholder="Add internal context, concerns, or notes for other admins..."
+                        />
+                    </div>
 
                     {!adminAction ? (
                         <div className="flex flex-col sm:flex-row gap-4">
@@ -388,7 +406,7 @@ export const VideoDetailView = ({
                             </button>
                         </div>
                     ) : (
-                        <div className="animate-in fade-in slide-in-from-top-2">
+                        <div className="animate-in fade-in slide-in-from-top-2 border-t border-slate-100 dark:border-slate-700 pt-4 mt-4">
                             {adminAction === 'approve' ? (
                                 <div className="mb-6 bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/30 text-center">
                                     <p className="font-bold text-green-800 dark:text-green-300 mb-1 text-lg">Confirm Approval?</p>
@@ -396,32 +414,39 @@ export const VideoDetailView = ({
                                         This video will become visible to the community immediately.
                                     </p>
                                 </div>
-                            ) : (
+                            ) : adminAction === 'reject' ? (
                                 <>
                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                                        {adminAction === 'reject' ? "Reason for Rejection (Visible to User)" : "Escalation Note (Internal Only)"}
+                                        Reason for Rejection <span className="text-red-500 text-xs font-normal">(Visible to User)</span>
                                     </label>
                                     <textarea 
-                                        value={adminNote}
-                                        onChange={(e) => setAdminNote(e.target.value)}
+                                        value={rejectionFeedback}
+                                        onChange={(e) => setRejectionFeedback(e.target.value)}
                                         className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-eggplant outline-none mb-4"
                                         rows={3}
-                                        placeholder={adminAction === 'reject' ? "e.g. Contains inappropriate language..." : "e.g. Needs second opinion on..."}
+                                        placeholder="e.g. Content contains inappropriate language. Please review guidelines..."
                                         autoFocus
                                     />
                                 </>
+                            ) : (
+                                <div className="mb-6 bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-100 dark:border-orange-900/30 text-center">
+                                    <p className="font-bold text-orange-800 dark:text-orange-300 mb-1 text-lg">Confirm Escalation?</p>
+                                    <p className="text-sm text-orange-700 dark:text-orange-400">
+                                        This will mark the video as "Needs Review" for senior admins. Ensure you've added an internal note above.
+                                    </p>
+                                </div>
                             )}
                             
                             <div className="flex gap-3">
                                 <button 
-                                    onClick={() => { setAdminAction(null); setAdminNote(""); }}
+                                    onClick={() => { setAdminAction(null); setRejectionFeedback(""); }}
                                     className="px-6 py-2.5 rounded-lg font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button 
                                     onClick={() => handleAdminVerdict(adminAction === 'approve' ? 'approved' : adminAction === 'reject' ? 'rejected' : 'needs_review')}
-                                    disabled={adminAction !== 'approve' && !adminNote.trim()}
+                                    disabled={(adminAction === 'reject' && !rejectionFeedback.trim())}
                                     className={`flex-1 py-2.5 rounded-lg font-bold transition-colors text-white ${
                                         adminAction === 'approve' ? 'bg-green-500 hover:bg-green-600' :
                                         adminAction === 'reject' ? 'bg-red-500 hover:bg-red-600' : 'bg-orange-500 hover:bg-orange-600'
@@ -435,7 +460,50 @@ export const VideoDetailView = ({
                 </div>
              )}
 
-             <div>
+             {/* Read-only Admin Info for non-reviewable videos */}
+             {isAdmin && !isReviewable && (
+                 <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 mb-4">
+                     <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                         <ShieldAlert size={14} /> Admin Details
+                     </h3>
+                     <div className="space-y-3">
+                         <div className="flex flex-col sm:flex-row gap-4 text-sm">
+                             <div>
+                                 <span className="text-slate-500 dark:text-slate-400">Status:</span>
+                                 <span className={`ml-2 font-bold uppercase ${
+                                     video.status === 'approved' ? 'text-green-600' : 'text-red-600'
+                                 }`}>{video.status}</span>
+                             </div>
+                             {video.approvedAt && (
+                                 <div>
+                                     <span className="text-slate-500 dark:text-slate-400">Decision Date:</span>
+                                     <span className="ml-2 dark:text-slate-300">{formatDate(video.approvedAt)}</span>
+                                 </div>
+                             )}
+                         </div>
+                         
+                         {video.admin_notes && (
+                             <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
+                                 <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+                                     <Lock size={12} /> Internal Note
+                                 </p>
+                                 <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{video.admin_notes}</p>
+                             </div>
+                         )}
+                         
+                         {video.feedback && (
+                             <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/30">
+                                 <p className="text-xs font-bold text-red-500 mb-1 flex items-center gap-1">
+                                     <FileText size={12} /> User Feedback (Rejection Reason)
+                                 </p>
+                                 <p className="text-sm text-red-800 dark:text-red-300 whitespace-pre-wrap">{video.feedback}</p>
+                             </div>
+                         )}
+                     </div>
+                 </div>
+             )}
+
+             <FadeIn delay={100}>
                 <h1 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-2">{video.title}</h1>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                    <div className="flex items-center gap-4">
@@ -452,7 +520,7 @@ export const VideoDetailView = ({
                       </div>
                    </div>
                    
-                   {!isAdminReview && (
+                   {!showAdminReviewPanel && (
                    <div className="flex items-center gap-3">
                        <button 
                             onClick={handleReport}
@@ -487,10 +555,10 @@ export const VideoDetailView = ({
                         {video.description}
                     </p>
                 )}
-             </div>
+             </FadeIn>
 
-             {!isAdminReview && (
-             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
+             {!showAdminReviewPanel && (
+             <FadeIn delay={200} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
                 <h3 className="font-bold text-lg mb-4 dark:text-white">Comments ({video.comments?.length || 0})</h3>
                 {user ? (
                    <form onSubmit={handlePostComment} className="flex gap-4 mb-8">
@@ -563,12 +631,12 @@ export const VideoDetailView = ({
                         </div>
                     )}
                 </div>
-             </div>
+             </FadeIn>
              )}
           </div>
 
           <div className="space-y-6">
-             {isAdminReview ? (
+             {showAdminReviewPanel ? (
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 sticky top-24">
                    <h3 className="font-bold text-lg mb-4 dark:text-white flex items-center gap-2 font-serif">
                        <Lightbulb size={20} className="text-yellow-500" /> Review Guidelines
@@ -596,12 +664,12 @@ export const VideoDetailView = ({
                          </div>
                       </div>
                       <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
-                         <strong>Tip:</strong> If you are unsure, use the "Not Sure" button to escalate to a senior admin.
+                         <strong>Tip:</strong> Use internal notes to document your decision process for other admins.
                       </div>
                    </div>
                 </div>
              ) : (
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
+                <FadeIn delay={300} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
                     <h3 className="font-bold text-lg mb-4 dark:text-white">Related Videos</h3>
                     <div className="space-y-4">
                     {videos.filter(v => v.id !== video.id && v.status === 'approved').slice(0, 3).map(v => (
@@ -616,7 +684,7 @@ export const VideoDetailView = ({
                         </div>
                     ))}
                     </div>
-                </div>
+                </FadeIn>
              )}
           </div>
        </div>

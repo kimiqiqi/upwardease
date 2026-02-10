@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Search, PlayCircle, User } from "lucide-react";
 import { VideoType, UserType } from "../types";
+import { FadeIn } from "../components/FadeIn";
 
 export const GalleryView = ({ videos, onVideoClick, navigate, user }: { videos: VideoType[], onVideoClick: (id: number) => void, navigate: any, user: UserType }) => {
   const [filter, setFilter] = useState("All");
@@ -10,10 +11,21 @@ export const GalleryView = ({ videos, onVideoClick, navigate, user }: { videos: 
   // Filter logic
   const filteredVideos = videos.filter(v => {
     if (v.status !== 'approved') return false;
-    if (filter !== "All" && v.category !== filter) return false;
+    
+    // Filter by Category or Tags
+    if (filter !== "All") {
+        const matchesCategory = v.category === filter;
+        const matchesTags = v.tags ? v.tags.includes(filter) : false;
+        
+        if (!matchesCategory && !matchesTags) return false;
+    }
+
+    // Filter by Search Text
     if (search) {
         const lower = search.toLowerCase();
-        return v.title.toLowerCase().includes(lower) || (v as any).description?.toLowerCase().includes(lower) || v.author.toLowerCase().includes(lower);
+        return v.title.toLowerCase().includes(lower) || 
+               v.description?.toLowerCase().includes(lower) || 
+               v.author.toLowerCase().includes(lower);
     }
     return true;
   });
@@ -28,7 +40,7 @@ export const GalleryView = ({ videos, onVideoClick, navigate, user }: { videos: 
 
   return (
     <div className="space-y-8">
-       <div className="flex flex-col gap-6">
+       <FadeIn direction="down" className="flex flex-col gap-6">
           <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
             <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">Community Gallery</h2>
             <div className="w-full md:w-96 relative">
@@ -54,45 +66,52 @@ export const GalleryView = ({ videos, onVideoClick, navigate, user }: { videos: 
                </button>
              ))}
           </div>
-       </div>
+       </FadeIn>
 
        {filteredVideos.length === 0 ? (
-         <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 border-dashed">
-            <Search className="mx-auto text-slate-300 mb-4" size={48} />
-            <h3 className="text-lg font-bold text-slate-600 dark:text-slate-300">No videos found</h3>
-            <p className="text-slate-400 text-sm">Try adjusting your search or filter.</p>
-         </div>
+         <FadeIn>
+            <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 border-dashed">
+                <Search className="mx-auto text-slate-300 mb-4" size={48} />
+                <h3 className="text-lg font-bold text-slate-600 dark:text-slate-300">No videos found</h3>
+                <p className="text-slate-400 text-sm">Try adjusting your search or filter.</p>
+            </div>
+         </FadeIn>
        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVideos.map(video => (
-                <div key={video.id} onClick={() => onVideoClick(video.id)} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer group border border-slate-100 dark:border-slate-700 flex flex-col">
-                    <div className={`aspect-video ${video.color} relative flex items-center justify-center`}>
-                    <PlayCircle size={48} className="text-slate-900/50 group-hover:scale-110 transition-transform" />
-                    <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
-                        {video.views} views
-                    </div>
-                    </div>
-                    <div className="p-5 flex-1 flex flex-col">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-bold text-eggplant dark:text-teal-400 uppercase tracking-wide">{video.category}</span>
-                    </div>
-                    <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-1">{video.title}</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 flex-1">{video.description}</p>
-                    <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-700">
-                        <div className="flex items-center gap-2">
-                             <div 
-                                onClick={(e) => handleAvatarClick(e, video.uploaderId)}
-                                className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-[10px] font-bold hover:ring-2 ring-eggplant transition-all"
-                                title={video.author}
-                             >
-                                 {video.author.charAt(0)}
-                             </div>
-                             <span className="font-bold">{video.author}</span>
+            {filteredVideos.map((video, index) => (
+                <FadeIn key={video.id} delay={index * 50}>
+                    <div onClick={() => onVideoClick(video.id)} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer group border border-slate-100 dark:border-slate-700 flex flex-col h-full">
+                        <div className={`aspect-video ${video.color} relative flex items-center justify-center`}>
+                        <PlayCircle size={48} className="text-slate-900/50 group-hover:scale-110 transition-transform" />
+                        <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                            {video.views} views
                         </div>
-                        <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">{video.grade}</span>
+                        </div>
+                        <div className="p-5 flex-1 flex flex-col">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="text-xs font-bold text-eggplant dark:text-teal-400 uppercase tracking-wide">{video.category}</span>
+                            {video.tags && video.tags.length > 1 && (
+                                <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500">+{video.tags.length - 1}</span>
+                            )}
+                        </div>
+                        <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-1">{video.title}</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 flex-1">{video.description}</p>
+                        <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-700">
+                            <div className="flex items-center gap-2">
+                                <div 
+                                    onClick={(e) => handleAvatarClick(e, video.uploaderId)}
+                                    className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-[10px] font-bold hover:ring-2 ring-eggplant transition-all"
+                                    title={video.author}
+                                >
+                                    {video.author.charAt(0)}
+                                </div>
+                                <span className="font-bold">{video.author}</span>
+                            </div>
+                            <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">{video.grade}</span>
+                        </div>
+                        </div>
                     </div>
-                    </div>
-                </div>
+                </FadeIn>
             ))}
         </div>
        )}
