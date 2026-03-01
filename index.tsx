@@ -13,9 +13,10 @@ import { ContactView } from "./views/ContactView";
 import { AdminView } from "./views/AdminView";
 import { LoginView } from "./views/LoginView";
 import { AboutView } from "./views/AboutView";
+import { TermsView } from "./views/TermsView";
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState<"home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail" | "profile" | "about">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail" | "profile" | "about" | "terms">("home");
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [previousTab, setPreviousTab] = useState<string>("gallery");
   const [user, setUser] = useState<UserType>(null);
@@ -35,6 +36,13 @@ const App = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  const handleNavigate = (tab: any) => {
+    if (tab === "terms" || tab === "video-detail") {
+       setPreviousTab(activeTab);
+    }
+    setActiveTab(tab);
+  };
 
   const handleLogin = (userData: Partial<UserType>) => {
     // Generate a mock ID if not provided (simulating backend)
@@ -77,29 +85,30 @@ const App = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "home": return <HomeView navigate={setActiveTab} />;
-      case "upload": return <UploadView user={user} navigate={setActiveTab} setVideos={setVideos} />;
-      case "gallery": return <GalleryView videos={videos} onVideoClick={handleVideoClick} navigate={setActiveTab} user={user} />;
+      case "home": return <HomeView navigate={handleNavigate} />;
+      case "upload": return <UploadView user={user} navigate={handleNavigate} setVideos={setVideos} />;
+      case "gallery": return <GalleryView videos={videos} onVideoClick={handleVideoClick} navigate={handleNavigate} user={user} />;
       case "video-detail": 
         const video = videos.find(v => v.id === selectedVideoId);
         return video ? 
             <VideoDetailView 
                 video={video} 
                 user={user} 
-                navigate={setActiveTab} 
+                navigate={handleNavigate} 
                 setVideos={setVideos} 
                 starredVideoIds={starredVideoIds}
                 setStarredVideoIds={setStarredVideoIds}
                 videos={videos}
                 previousTab={previousTab}
             /> : 
-            <GalleryView videos={videos} onVideoClick={handleVideoClick} navigate={setActiveTab} user={user} />;
+            <GalleryView videos={videos} onVideoClick={handleVideoClick} navigate={handleNavigate} user={user} />;
       case "contact": return <ContactView />;
-      case "admin": return <AdminView user={user} navigate={setActiveTab} videos={videos} setVideos={setVideos} onVideoClick={handleVideoClick} />;
-      case "profile": return <ProfileView user={user} setUser={setUser} videos={videos} setVideos={setVideos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={setActiveTab} />;
-      case "login": return <LoginView onLogin={handleLogin} navigate={setActiveTab} />;
+      case "admin": return <AdminView user={user} navigate={handleNavigate} videos={videos} setVideos={setVideos} onVideoClick={handleVideoClick} />;
+      case "profile": return <ProfileView user={user} setUser={setUser} videos={videos} setVideos={setVideos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={handleNavigate} />;
+      case "login": return <LoginView onLogin={handleLogin} navigate={handleNavigate} />;
       case "about": return <AboutView />;
-      default: return <HomeView navigate={setActiveTab} />;
+      case "terms": return <TermsView navigate={handleNavigate} previousTab={previousTab} />;
+      default: return <HomeView navigate={handleNavigate} />;
     }
   };
 
@@ -109,7 +118,7 @@ const App = () => {
       {/* Top Navigation */}
       <Navbar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+        setActiveTab={handleNavigate} 
         user={user} 
         onLogout={handleLogout}
         darkMode={darkMode}
@@ -122,7 +131,7 @@ const App = () => {
           <div className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8">
             {renderContent()}
           </div>
-          <Footer navigate={setActiveTab} darkMode={darkMode} />
+          <Footer navigate={handleNavigate} darkMode={darkMode} />
         </div>
       </main>
     </div>

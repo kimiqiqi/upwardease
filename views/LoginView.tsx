@@ -19,6 +19,7 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (userData: Partial<U
   const [age, setAge] = useState("");
   const [grade, setGrade] = useState("");
   const [school, setSchool] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +30,7 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (userData: Partial<U
     setError(null);
     if (!identifier) return "Email or Phone is required.";
     if (isRegistering) {
+       if (!agreedToTerms) return "You must agree to the Terms of Service.";
        if (!name) return "Name is required.";
        if (role === "student") {
          if (!age) return "Age is required.";
@@ -39,6 +41,9 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (userData: Partial<U
        }
        if (password !== confirmPassword) {
          return "Passwords do not match.";
+       }
+       if (!agreedToTerms) {
+         return "You must agree to the Terms of Service to create an account.";
        }
     }
     return null;
@@ -219,6 +224,21 @@ export const LoginView = ({ onLogin, navigate }: { onLogin: (userData: Partial<U
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-eggplant outline-none transition-all dark:text-white"
                   placeholder="••••••••"
                 />
+             </div>
+          )}
+
+          {isRegistering && (
+             <div className="flex items-start gap-2 pt-2">
+                <input 
+                  type="checkbox" 
+                  id="terms" 
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-1 shrink-0 w-4 h-4 text-eggplant border-slate-300 rounded focus:ring-eggplant"
+                />
+                <label htmlFor="terms" className="text-sm text-slate-600 dark:text-slate-400">
+                  I agree to the <button type="button" onClick={() => navigate("terms")} className="text-eggplant dark:text-teal-400 font-bold hover:underline">Terms of Service</button> and acknowledge the Medical Disclaimer.
+                </label>
              </div>
           )}
 

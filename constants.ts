@@ -127,20 +127,39 @@ export const REVIEWS = [
     text: "Before I found UpwardEase, I struggled with exam anxiety and felt like no one understood the pressure. Seeing other students share their struggles and strategies made me realize I wasn't alone. It's the only place I feel safe venting about school.",
     author: "Hannah",
     role: "High School Junior",
-    color: "bg-yellow-100"
+    color: "bg-yellow-100",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&q=80"
   },
   {
     id: 2,
     text: "I want to create and nurture an environment where people are lifting each other up. UpwardEase enables candid and genuine conversations in a safe place where we can feel comfortable sharing, especially when talking about burnout.",
     author: "Olivia",
     role: "College Freshman",
-    color: "bg-red-100"
+    color: "bg-red-100",
+    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&q=80"
   },
   {
     id: 3,
     text: "Finding study hacks here saved my GPA, but the community saved my sanity. It's thoughtful by nature and truly helpful by design. I love that we can release pressure without judgment.",
     author: "Marcus",
     role: "12th Grade Student",
-    color: "bg-blue-100"
+    color: "bg-blue-100",
+    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&h=150&fit=crop&q=80"
+  },
+  {
+    id: 4,
+    text: "The weekly featured topics really help me focus on specific areas of my mental health. Hearing how others balance their social life and academics gave me a completely new perspective.",
+    author: "David",
+    role: "High School Senior",
+    color: "bg-green-100",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&q=80"
+  },
+  {
+    id: 5,
+    text: "I was hesitant to upload a video at first, but the moderation here is incredible. It's completely troll-free. I finally feel like I have a voice and that my experiences matter.",
+    author: "Chloe",
+    role: "College Sophomore",
+    color: "bg-purple-100",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&q=80"
   }
 ];

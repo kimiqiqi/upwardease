@@ -28,7 +28,7 @@ export const Footer = ({ navigate, darkMode }: { navigate: (tab: any) => void, d
           <button onClick={() => navigate("home")} className="hover:text-eggplant dark:hover:text-white">Who We Are</button>
           <button onClick={() => navigate("about")} className="hover:text-eggplant dark:hover:text-white">Our Mission</button>
           <a href="https://donate.stripe.com/test" target="_blank" rel="noopener noreferrer" className="text-accent-orange hover:text-orange-600">Donate</a>
-          <button className="hover:text-eggplant dark:hover:text-white">Terms of Service</button>
+          <button onClick={() => navigate("terms")} className="hover:text-eggplant dark:hover:text-white">Terms of Service</button>
           <button onClick={() => navigate("gallery")} className="hover:text-eggplant dark:hover:text-white">Gallery</button>
           <button onClick={() => navigate("contact")} className="hover:text-eggplant dark:hover:text-white">Contact Us</button>
       </div>
