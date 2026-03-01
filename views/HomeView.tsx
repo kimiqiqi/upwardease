@@ -34,9 +34,14 @@ export const HomeView = ({ navigate }: { navigate: (tab: any) => void }) => {
                 </p>
             </FadeIn>
             <FadeIn direction="up" delay={500}>
-                <SpotlightButton onClick={() => navigate("home")} className="bg-eggplant text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-eggplant-dark transition-all flex items-center gap-2 group w-auto">
-                Curious how we help? <ArrowLeft className="rotate-180 group-hover:translate-x-1 transition-transform" />
-                </SpotlightButton>
+                <div className="flex flex-wrap gap-4">
+                  <SpotlightButton onClick={() => navigate("about")} className="bg-eggplant text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-eggplant-dark transition-all flex items-center gap-2 group w-auto">
+                  Curious how we help? <ArrowLeft className="rotate-180 group-hover:translate-x-1 transition-transform" />
+                  </SpotlightButton>
+                  <a href="https://donate.stripe.com/test" target="_blank" rel="noopener noreferrer" className="bg-accent-orange text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-600 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl w-auto">
+                    Donate Now <Heart className="w-5 h-5" />
+                  </a>
+                </div>
             </FadeIn>
          </div>
 

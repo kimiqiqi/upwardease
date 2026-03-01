@@ -12,9 +12,10 @@ import { ProfileView } from "./views/ProfileView";
 import { ContactView } from "./views/ContactView";
 import { AdminView } from "./views/AdminView";
 import { LoginView } from "./views/LoginView";
+import { AboutView } from "./views/AboutView";
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState<"home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail" | "profile">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail" | "profile" | "about">("home");
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [previousTab, setPreviousTab] = useState<string>("gallery");
   const [user, setUser] = useState<UserType>(null);
@@ -97,6 +98,7 @@ const App = () => {
       case "admin": return <AdminView user={user} navigate={setActiveTab} videos={videos} setVideos={setVideos} onVideoClick={handleVideoClick} />;
       case "profile": return <ProfileView user={user} setUser={setUser} videos={videos} setVideos={setVideos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={setActiveTab} />;
       case "login": return <LoginView onLogin={handleLogin} navigate={setActiveTab} />;
+      case "about": return <AboutView />;
       default: return <HomeView navigate={setActiveTab} />;
     }
   };

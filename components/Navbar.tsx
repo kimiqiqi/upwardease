@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, Menu, X, Sun, Moon, LogOut, AlertCircle } from "lucide-react";
+import { Sparkles, Menu, X, Sun, Moon, LogOut, AlertCircle, Heart } from "lucide-react";
 import { UserType } from "../types";
 import { SpotlightButton } from "./SpotlightButton";
 
@@ -49,6 +49,7 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             <NavItem id="home" label="Who We Are" />
+            <NavItem id="about" label="Our Mission" />
             
             {/* Gallery: Visible to guests and students, hidden for admins */}
             {(!user || user.role !== 'admin') && <NavItem id="gallery" label="Gallery" />}
@@ -67,6 +68,9 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
 
           {/* User & Theme Actions */}
           <div className="hidden md:flex items-center gap-4">
+            <a href="https://donate.stripe.com/test" target="_blank" rel="noopener noreferrer" className="text-accent-orange font-bold text-sm hover:text-orange-600 transition-colors flex items-center gap-1 bg-accent-orange/10 px-3 py-1.5 rounded-full">
+              <Heart size={16} /> Donate
+            </a>
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
               {darkMode ? <Sun size={18} /> : <Moon size={18} className="text-eggplant" />}
             </button>
@@ -110,6 +114,7 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
         <div className={`md:hidden p-4 border-t ${darkMode ? "bg-slate-900 border-slate-700" : "bg-cream border-slate-200"}`}>
           <div className="flex flex-col space-y-4">
             <NavItem id="home" label="Who We Are" />
+            <NavItem id="about" label="Our Mission" />
             
             {(!user || user.role !== 'admin') && <NavItem id="gallery" label="Gallery" />}
             
@@ -121,6 +126,9 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
             {user && user.role === 'admin' && <NavItem id="admin" label="Admin Dashboard" />}
             
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4 flex justify-between items-center">
+               <a href="https://donate.stripe.com/test" target="_blank" rel="noopener noreferrer" className="text-accent-orange font-bold text-sm flex items-center gap-1">
+                 <Heart size={16} /> Donate
+               </a>
                <button onClick={() => setDarkMode(!darkMode)} className="flex items-center gap-2 text-sm font-bold">
                   {darkMode ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}
                </button>

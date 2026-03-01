@@ -19,7 +19,7 @@ export const ContactView = () => {
                 <div>
                     <h3 className="font-bold text-xl text-slate-900 dark:text-white">Email Us</h3>
                     <p className="text-slate-500 mb-1">For general inquiries and support</p>
-                    <a href="mailto:hello@upwardease.org" className="text-eggplant dark:text-teal-400 font-bold hover:underline">hello@upwardease.org</a>
+                    <a href="mailto:upwardease.contact@gmail.com" className="text-eggplant dark:text-teal-400 font-bold hover:underline">upwardease.contact@gmail.com</a>
                 </div>
             </div>
           </FadeIn>
