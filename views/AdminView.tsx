@@ -97,7 +97,8 @@ export const AdminView = ({
           v.id === id 
           ? { 
               ...v, 
-              adminNotes: escalationNote
+              adminNotes: escalationNote,
+              isEscalated: true
             } 
           : v
       ));
@@ -123,10 +124,10 @@ export const AdminView = ({
   };
 
 
-  const pendingVideos = videos.filter(v => v.status === 'pending' && !v.appealReason && v.reportCount === 0);
+  const pendingVideos = videos.filter(v => v.status === 'pending' && !v.appealReason && v.reportCount === 0 && !v.isEscalated);
   const approvedVideos = videos.filter(v => v.status === 'approved');
   const rejectedVideos = videos.filter(v => v.status === 'rejected');
-  const needsReviewVideos = videos.filter(v => !!v.appealReason || v.reportCount > 0);
+  const needsReviewVideos = videos.filter(v => !!v.appealReason || v.reportCount > 0 || v.isEscalated);
   const pendingAdminRequests = adminRequests.filter(req => req.status === 'pending');
   const unreadMessagesCount = contactMessages.filter(m => m.status === 'unread').length;
 

@@ -9,7 +9,8 @@ export const dismissReportForVideo = (
     const updatedVideo: VideoType = {
         ...video,
         reportReason: undefined,
-        reportCount: 0
+        reportCount: 0,
+        isEscalated: false
     };
 
     const logEntry: ModerationLogType = {
@@ -43,7 +44,8 @@ export const applyModerationVerdict = (
         publishedAt: status === 'approved' ? (video.publishedAt || now) : video.publishedAt,
         appealReason: undefined,
         reportReason: undefined,
-        reportCount: 0
+        reportCount: 0,
+        isEscalated: false
     };
 
     const logEntry: ModerationLogType = {

@@ -28,7 +28,7 @@ export const VideoDetailView = ({
   setStarredVideoIds: React.Dispatch<React.SetStateAction<number[]>> | ((updater: number[] | ((prev: number[]) => number[])) => void),
   videos: VideoType[],
   previousTab?: TabType | "gallery",
-  addNotification?: (message: string, type: 'like' | 'comment' | 'save' | 'system', linkId?: number) => void,
+  addNotification?: (targetUserId: string, message: string, type: 'like' | 'comment' | 'save' | 'system', linkId?: number) => void,
   reports?: ReportType[],
   setReports?: React.Dispatch<React.SetStateAction<ReportType[]>>,
   moderationLogs?: ModerationLogType[],
@@ -95,7 +95,7 @@ export const VideoDetailView = ({
         } else {
             // Simulate notifying the author ONLY if it's not their own video
             if (addNotification && v.submittedBy !== user.id) {
-                addNotification(`${user.name} liked your video "${v.title}"`, 'like', v.id);
+                addNotification(v.submittedBy, `${user.name} liked your video "${v.title}"`, 'like', v.id);
             }
             return { 
                 ...v, 
@@ -129,7 +129,7 @@ export const VideoDetailView = ({
                   };
               } else {
                   if (addNotification && c.authorId !== user.id) {
-                      addNotification(`${user.name} liked your comment on "${video.title}"`, 'like', video.id);
+                      addNotification(c.authorId, `${user.name} liked your comment on "${video.title}"`, 'like', video.id);
                   }
                   return {
                       ...c,
@@ -153,7 +153,7 @@ export const VideoDetailView = ({
       } else {
           setStarredVideoIds((prev: number[]) => [...prev, video.id]);
           if (addNotification && video.submittedBy !== user.id) {
-              addNotification(`${user.name} saved your video "${video.title}"`, 'save', video.id);
+              addNotification(video.submittedBy, `${user.name} saved your video "${video.title}"`, 'save', video.id);
           }
       }
   };
@@ -304,7 +304,7 @@ export const VideoDetailView = ({
     }));
 
     if (addNotification && video.submittedBy !== user.id) {
-        addNotification(`${user.name} commented on your video "${video.title}"`, 'comment', video.id);
+        addNotification(video.submittedBy, `${user.name} commented on your video "${video.title}"`, 'comment', video.id);
     }
 
     setComment("");
@@ -656,7 +656,7 @@ export const VideoDetailView = ({
                                </button>
                                <button 
                                    onClick={() => {
-                                       setVideos((prev: VideoType[]) => prev.map(v => v.id === video.id ? { ...v, adminNotes: 'Escalated from Video Detail', reportCount: (v.reportCount || 0) + 1 } : v));
+                                       setVideos((prev: VideoType[]) => prev.map(v => v.id === video.id ? { ...v, adminNotes: 'Escalated from Video Detail', isEscalated: true } : v));
                                        alert("Video escalated for review.");
                                        navigate("admin");
                                    }}

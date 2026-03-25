@@ -103,6 +103,7 @@ export type VideoType = {
   resourceLink?: string;
   appealReason?: string;
   reportReason?: string;
+  isEscalated?: boolean;
 };
 
 export type ReportStatus = "open" | "resolved" | "dismissed";

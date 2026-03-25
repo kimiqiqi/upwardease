@@ -156,9 +156,13 @@ const App = () => {
     }));
   };
 
-  const addNotification = (message: string, type: 'like' | 'comment' | 'save' | 'system', linkId?: number) => {
-    if (!user) return;
+  const addNotification = (targetUserId: string, message: string, type: 'like' | 'comment' | 'save' | 'system', linkId?: number) => {
+    const targetUser = users.find(u => u.id === targetUserId);
+    if (!targetUser) return;
     
+    // Respect user notification preferences
+    if (targetUser.preferences?.notifications === false) return;
+
     const newNotification = {
       id: `notif-${Date.now()}`,
       type,
@@ -168,16 +172,18 @@ const App = () => {
       linkId
     };
 
-    setUser(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        notificationsList: [newNotification, ...(prev.notificationsList || [])]
-      };
-    });
+    setUsers(prevUsers => prevUsers.map(u => {
+      if (u.id === targetUserId) {
+        return {
+          ...u,
+          notificationsList: [newNotification, ...(u.notificationsList || [])]
+        };
+      }
+      return u;
+    }));
 
-    if (user.preferences?.emailUpdates) {
-      console.log(`[SIMULATED EMAIL SENT to ${user.email || 'user'}]: ${message}`);
+    if (targetUser.preferences?.emailUpdates) {
+      console.log(`[SIMULATED EMAIL SENT to ${targetUser.email || 'user'}]: ${message}`);
       // In a real app, this would trigger a backend email service
     }
   };

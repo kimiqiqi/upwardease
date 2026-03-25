@@ -49,8 +49,8 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
             {/* Gallery: Visible to all */}
             <NavItem id="gallery" label="Gallery" />
             
-            {/* Share Story: Public or Student only */}
-            {(!user || user.role === 'user') && <NavItem id="upload" label="Share Story" />}
+            {/* Share Story: Visible to all logged-in roles or public */}
+            {(!user || user.role === 'user' || user.role === 'admin' || user.role === 'superadmin') && <NavItem id="upload" label="Share Story" />}
             
             <NavItem id="contact" label="Contact Us" />
             
@@ -156,7 +156,7 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
             
             <NavItem id="gallery" label="Gallery" />
             
-            {(!user || user.role === 'user') && <NavItem id="upload" label="Share Story" />}
+            {(!user || user.role === 'user' || user.role === 'admin' || user.role === 'superadmin') && <NavItem id="upload" label="Share Story" />}
             
             <NavItem id="contact" label="Contact Us" />
             
