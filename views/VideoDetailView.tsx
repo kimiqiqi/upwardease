@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { ArrowLeft, PlayCircle, Star, Heart, Send, User, Share2, ThumbsUp, Flag, AlertTriangle, X, CheckCircle2, HelpCircle, ShieldAlert, Lightbulb, Link as LinkIcon, Facebook, Twitter, Lock, FileText } from "lucide-react";
-import { VideoType, UserType, CommentType } from "../types";
+import { VideoType, UserType, CommentType, ReportType, ModerationLogType, TabType } from "../types";
 import { FadeIn } from "../components/FadeIn";
+import { getYouTubeEmbedUrl } from "../utils/youtube";
+import { applyModerationVerdict } from "../utils/moderation";
 
 export const VideoDetailView = ({ 
   video, 
@@ -11,16 +13,26 @@ export const VideoDetailView = ({
   starredVideoIds, 
   setStarredVideoIds,
   videos,
-  previousTab
+  previousTab,
+  addNotification,
+  reports,
+  setReports,
+  moderationLogs,
+  setModerationLogs
 }: { 
   video: VideoType, 
   user: UserType, 
-  navigate: any, 
-  setVideos: any,
+  navigate: (tab: TabType) => void, 
+  setVideos: React.Dispatch<React.SetStateAction<VideoType[]>>,
   starredVideoIds: number[],
-  setStarredVideoIds: any,
+  setStarredVideoIds: React.Dispatch<React.SetStateAction<number[]>> | ((updater: number[] | ((prev: number[]) => number[])) => void),
   videos: VideoType[],
-  previousTab?: string
+  previousTab?: TabType | "gallery",
+  addNotification?: (message: string, type: 'like' | 'comment' | 'save' | 'system', linkId?: number) => void,
+  reports?: ReportType[],
+  setReports?: React.Dispatch<React.SetStateAction<ReportType[]>>,
+  moderationLogs?: ModerationLogType[],
+  setModerationLogs?: React.Dispatch<React.SetStateAction<ModerationLogType[]>>
 }) => {
   const [comment, setComment] = useState("");
   const [showShareTooltip, setShowShareTooltip] = useState(false);
@@ -30,7 +42,7 @@ export const VideoDetailView = ({
   
   // Admin Review State
   const [adminAction, setAdminAction] = useState<'approve' | 'reject' | 'escalate' | null>(null);
-  const [internalNote, setInternalNote] = useState(video.admin_notes || "");
+  const [internalNote, setInternalNote] = useState(video.adminNotes || "");
   const [rejectionFeedback, setRejectionFeedback] = useState("");
 
   const MAX_COMMENT_LENGTH = 500;
@@ -39,10 +51,28 @@ export const VideoDetailView = ({
   const isStarred = starredVideoIds.includes(video.id);
   
   // Check if current user is admin
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   // Check if video is in a reviewable state
-  const isReviewable = video.status === 'pending' || video.status === 'needs_review';
+  const isReviewable = video.status === 'pending';
   const showAdminReviewPanel = isAdmin && isReviewable;
+
+  // Enforce video visibility based on user roles
+  if (video.status !== 'approved' && !isAdmin && video.submittedBy !== user?.id) {
+    return (
+      <div className="max-w-5xl mx-auto relative pb-12 text-center py-20">
+        <FadeIn>
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 border-dashed p-10 inline-block">
+            <ShieldAlert className="mx-auto text-red-400 mb-4" size={48} />
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Access Denied</h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">This video is currently under review or has not been approved for public viewing.</p>
+            <button onClick={() => navigate("gallery")} className="px-6 py-2 bg-eggplant text-white rounded-full font-bold hover:bg-eggplant/90 transition-colors">
+              Return to Gallery
+            </button>
+          </div>
+        </FadeIn>
+      </div>
+    );
+  }
 
   const handleToggleLike = () => {
     if (!user) {
@@ -63,6 +93,10 @@ export const VideoDetailView = ({
                 likedBy: likedBy.filter(id => id !== user.id) 
             };
         } else {
+            // Simulate notifying the author ONLY if it's not their own video
+            if (addNotification && v.submittedBy !== user.id) {
+                addNotification(`${user.name} liked your video "${v.title}"`, 'like', v.id);
+            }
             return { 
                 ...v, 
                 likes: v.likes + 1, 
@@ -94,6 +128,9 @@ export const VideoDetailView = ({
                       likedBy: likedBy.filter(id => id !== user.id)
                   };
               } else {
+                  if (addNotification && c.authorId !== user.id) {
+                      addNotification(`${user.name} liked your comment on "${video.title}"`, 'like', video.id);
+                  }
                   return {
                       ...c,
                       likes: (c.likes || 0) + 1,
@@ -115,14 +152,18 @@ export const VideoDetailView = ({
           setStarredVideoIds((prev: number[]) => prev.filter(id => id !== video.id));
       } else {
           setStarredVideoIds((prev: number[]) => [...prev, video.id]);
+          if (addNotification && video.submittedBy !== user.id) {
+              addNotification(`${user.name} saved your video "${video.title}"`, 'save', video.id);
+          }
       }
   };
 
   const handleShare = async () => {
+    const siteUrl = window.location.origin;
     const shareData = {
         title: video.title,
-        text: `Check out this video by ${video.author} on UpwardEase!`,
-        url: window.location.href
+        text: `Check out "${video.title}" by ${video.author} on UpwardEase!`,
+        url: siteUrl
     };
 
     if (navigator.share) {
@@ -139,7 +180,9 @@ export const VideoDetailView = ({
 
   const handleCopyLink = async () => {
     try {
-        await navigator.clipboard.writeText(window.location.href);
+        const siteUrl = window.location.origin;
+        const shareText = `Check out "${video.title}" by ${video.author} on UpwardEase! ${siteUrl}`;
+        await navigator.clipboard.writeText(shareText);
         setShowShareTooltip(true);
         setTimeout(() => setShowShareTooltip(false), 2000);
     } catch (err) {
@@ -159,12 +202,23 @@ export const VideoDetailView = ({
       e.preventDefault();
       if (!reportReason.trim()) return;
 
+      if (setReports) {
+          const newReport: ReportType = {
+              id: `report-${Date.now()}`,
+              submissionId: video.id,
+              reportedBy: user?.id || 'anonymous',
+              reason: reportReason,
+              status: 'open'
+          };
+          setReports((prev: ReportType[]) => [...prev, newReport]);
+      }
+
       setVideos((prev: VideoType[]) => prev.map(v => {
           if (v.id === video.id) {
               return {
                   ...v,
-                  status: 'needs_review',
-                  reportReason: reportReason
+                  reportReason: reportReason,
+                  reportCount: (v.reportCount || 0) + 1
               };
           }
           return v;
@@ -175,21 +229,50 @@ export const VideoDetailView = ({
       alert("Video has been reported for review. Thank you for helping keep our community safe.");
   };
   
-  const handleAdminVerdict = (status: 'approved' | 'rejected' | 'needs_review') => {
+  const handleAdminVerdict = (status: 'approved' | 'rejected' | 'removed') => {
+      if (!user) return;
+      
+      const { updatedVideo, logEntry } = applyModerationVerdict(
+          video,
+          status,
+          user,
+          status === 'rejected' ? rejectionFeedback : undefined,
+          internalNote || undefined
+      );
+
+      setVideos((prev: VideoType[]) => prev.map(v => v.id === video.id ? updatedVideo : v));
+      
+      if (setModerationLogs) {
+          setModerationLogs((prev: ModerationLogType[]) => [logEntry, ...prev]);
+      }
+      
+      // Navigate back to admin dashboard after decision
+      navigate('admin');
+  };
+
+  const handleUpdateNotes = () => {
       setVideos((prev: VideoType[]) => prev.map(v => {
           if (v.id === video.id) {
               return { 
                   ...v, 
-                  status, 
-                  feedback: status === 'rejected' ? rejectionFeedback : v.feedback,
-                  admin_notes: internalNote,
-                  approvedAt: status === 'approved' ? new Date().toISOString() : v.approvedAt,
-                  appealReason: status !== 'needs_review' ? undefined : v.appealReason,
-                  reportReason: status !== 'needs_review' ? undefined : v.reportReason
+                  adminNotes: internalNote
               };
           }
           return v;
       }));
+      
+      if (setModerationLogs && user) {
+          const newLog: ModerationLogType = {
+              id: `log-${Date.now()}`,
+              actorId: user.id,
+              action: 'update_note',
+              targetType: 'video',
+              targetId: video.id,
+              timestamp: new Date().toISOString()
+          };
+          setModerationLogs((prev: ModerationLogType[]) => [newLog, ...prev]);
+      }
+      
       // Navigate back to admin dashboard after decision
       navigate('admin');
   };
@@ -220,11 +303,15 @@ export const VideoDetailView = ({
         return v;
     }));
 
+    if (addNotification && video.submittedBy !== user.id) {
+        addNotification(`${user.name} commented on your video "${video.title}"`, 'comment', video.id);
+    }
+
     setComment("");
   };
 
   const handleAvatarClick = () => {
-      if (user && video.uploaderId === user.id) {
+      if (user && video.submittedBy === user.id) {
           navigate("profile");
       }
   };
@@ -256,10 +343,10 @@ export const VideoDetailView = ({
                        >
                            <LinkIcon size={20} /> 
                            <span className="flex-1 text-left">Copy Link</span>
-                           {showShareTooltip && <span className="text-xs text-green-500 font-bold bg-green-100 px-2 py-1 rounded">Copied!</span>}
+                           {showShareTooltip && <span className="text-xs text-green-500 dark:text-green-400 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">Copied!</span>}
                        </button>
                        <a 
-                           href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this video by ${video.author} on UpwardEase!`)}&url=${encodeURIComponent(window.location.href)}`}
+                           href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out "${video.title}" by ${video.author} on UpwardEase!`)}&url=${encodeURIComponent(window.location.origin)}`}
                            target="_blank"
                            rel="noopener noreferrer"
                            className="w-full flex items-center gap-3 p-3 rounded-xl bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 transition-colors font-bold text-sky-600 dark:text-sky-400"
@@ -267,7 +354,7 @@ export const VideoDetailView = ({
                            <Twitter size={20} /> Share on X
                        </a>
                        <a 
-                           href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                           href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin)}`}
                            target="_blank"
                            rel="noopener noreferrer"
                            className="w-full flex items-center gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors font-bold text-blue-600 dark:text-blue-400"
@@ -332,20 +419,51 @@ export const VideoDetailView = ({
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
              <FadeIn>
-             <div className="rounded-3xl overflow-hidden shadow-lg bg-black relative group aspect-video">
-                {video.videoUrl ? (
-                    <video 
-                        src={video.videoUrl} 
-                        controls 
-                        autoPlay 
-                        className="w-full h-full object-contain"
-                    >
-                        Your browser does not support the video tag.
-                    </video>
+             <div className="rounded-3xl overflow-hidden shadow-lg bg-black relative group aspect-video flex items-center justify-center">
+                {video.sourceType === 'youtube' && video.youtubeVideoId ? (
+                    <>
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-800 animate-pulse z-0">
+                            <PlayCircle size={48} className="text-slate-600" />
+                        </div>
+                        <iframe
+                            src={getYouTubeEmbedUrl(video.youtubeVideoId)}
+                            title={video.title}
+                            className="w-full h-full border-0 relative z-10"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            onLoad={(e) => {
+                                const target = e.target as HTMLIFrameElement;
+                                target.style.opacity = '1';
+                            }}
+                            style={{ opacity: 0, transition: 'opacity 0.3s ease-in-out' }}
+                        ></iframe>
+                    </>
+                ) : video.youtubeVideoId ? (
+                    <iframe 
+                        src={`https://www.youtube.com/embed/${video.youtubeVideoId}`} 
+                        title={`Video ${video.id}`}
+                        className="w-full h-full border-0 relative z-10"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        onLoad={(e) => {
+                            const target = e.target as HTMLIFrameElement;
+                            target.style.opacity = '1';
+                        }}
+                        style={{ opacity: 0, transition: 'opacity 0.3s ease-in-out' }}
+                    ></iframe>
                 ) : (
                     <div className={`w-full h-full ${video.color} flex flex-col items-center justify-center`}>
                         <PlayCircle size={80} className="text-slate-900/50 mb-4" />
-                        <p className="text-slate-500 font-bold bg-white/50 px-4 py-2 rounded-full">Video preview unavailable</p>
+                        <p className="text-slate-500 dark:text-slate-300 font-bold bg-white/50 dark:bg-slate-800/50 px-4 py-2 rounded-full">Video preview unavailable</p>
+                    </div>
+                )}
+                
+                {/* Fallback for video tag error */}
+                {video.youtubeVideoId && (
+                    <div className="hidden absolute inset-0 flex-col items-center justify-center bg-slate-900 text-white z-20">
+                        <AlertTriangle size={48} className="text-red-500 mb-4" />
+                        <p className="font-bold">Failed to load video</p>
+                        <p className="text-sm text-slate-400 mt-2">The video file might be corrupted or unavailable.</p>
                     </div>
                 )}
                 
@@ -445,7 +563,7 @@ export const VideoDetailView = ({
                                     Cancel
                                 </button>
                                 <button 
-                                    onClick={() => handleAdminVerdict(adminAction === 'approve' ? 'approved' : adminAction === 'reject' ? 'rejected' : 'needs_review')}
+                                    onClick={() => adminAction === 'escalate' ? handleUpdateNotes() : handleAdminVerdict(adminAction === 'approve' ? 'approved' : 'rejected')}
                                     disabled={(adminAction === 'reject' && !rejectionFeedback.trim())}
                                     className={`flex-1 py-2.5 rounded-lg font-bold transition-colors text-white ${
                                         adminAction === 'approve' ? 'bg-green-500 hover:bg-green-600' :
@@ -474,29 +592,29 @@ export const VideoDetailView = ({
                                      video.status === 'approved' ? 'text-green-600' : 'text-red-600'
                                  }`}>{video.status}</span>
                              </div>
-                             {video.approvedAt && (
+                             {video.publishedAt && (
                                  <div>
                                      <span className="text-slate-500 dark:text-slate-400">Decision Date:</span>
-                                     <span className="ml-2 dark:text-slate-300">{formatDate(video.approvedAt)}</span>
+                                     <span className="ml-2 dark:text-slate-300">{formatDate(video.publishedAt)}</span>
                                  </div>
                              )}
                          </div>
                          
-                         {video.admin_notes && (
+                         {video.adminNotes && (
                              <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
                                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
                                      <Lock size={12} /> Internal Note
                                  </p>
-                                 <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{video.admin_notes}</p>
+                                 <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{video.adminNotes}</p>
                              </div>
                          )}
                          
-                         {video.feedback && (
+                         {video.reviewNote && (
                              <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/30">
                                  <p className="text-xs font-bold text-red-500 mb-1 flex items-center gap-1">
                                      <FileText size={12} /> User Feedback (Rejection Reason)
                                  </p>
-                                 <p className="text-sm text-red-800 dark:text-red-300 whitespace-pre-wrap">{video.feedback}</p>
+                                 <p className="text-sm text-red-800 dark:text-red-300 whitespace-pre-wrap">{video.reviewNote}</p>
                              </div>
                          )}
                      </div>
@@ -509,19 +627,46 @@ export const VideoDetailView = ({
                    <div className="flex items-center gap-4">
                       <div 
                         onClick={handleAvatarClick}
-                        className={`w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-white ${user && video.uploaderId === user.id ? 'cursor-pointer hover:ring-2 ring-eggplant' : ''}`}
-                        title={user && video.uploaderId === user.id ? "Go to my profile" : video.author}
+                        className={`w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-white ${user && video.submittedBy === user.id ? 'cursor-pointer hover:ring-2 ring-eggplant' : ''}`}
+                        title={user && video.submittedBy === user.id ? "Go to my profile" : video.author}
                       >
                          {video.author.charAt(0)}
                       </div>
                       <div>
                          <p className="font-bold text-slate-900 dark:text-white">{video.author}</p>
-                         <p className="text-xs text-slate-500">{video.grade} • {formatDate(video.uploadedAt)}</p>
+                         <p className="text-xs text-slate-500 dark:text-slate-400">{video.grade} • {formatDate(video.createdAt)}</p>
                       </div>
                    </div>
                    
                    {!showAdminReviewPanel && (
                    <div className="flex items-center gap-3">
+                       {isAdmin && (
+                           <>
+                               <button 
+                                   onClick={() => {
+                                       if (window.confirm("Are you sure you want to delete this video?")) {
+                                           setVideos((prev: VideoType[]) => prev.filter(v => v.id !== video.id));
+                                           navigate("gallery");
+                                       }
+                                   }}
+                                   className="p-2.5 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                   title="Delete Video"
+                               >
+                                   <X size={20} />
+                               </button>
+                               <button 
+                                   onClick={() => {
+                                       setVideos((prev: VideoType[]) => prev.map(v => v.id === video.id ? { ...v, adminNotes: 'Escalated from Video Detail', reportCount: (v.reportCount || 0) + 1 } : v));
+                                       alert("Video escalated for review.");
+                                       navigate("admin");
+                                   }}
+                                   className="p-2.5 rounded-full text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                                   title="Escalate (Needs Review)"
+                               >
+                                   <AlertTriangle size={20} />
+                               </button>
+                           </>
+                       )}
                        <button 
                             onClick={handleReport}
                             className="p-2.5 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -674,12 +819,12 @@ export const VideoDetailView = ({
                     <div className="space-y-4">
                     {videos.filter(v => v.id !== video.id && v.status === 'approved').slice(0, 3).map(v => (
                         <div key={v.id} className="flex gap-3 cursor-pointer group" onClick={() => { navigate("gallery"); }}> 
-                            <div className={`w-24 h-16 ${v.color} rounded-lg flex-shrink-0 bg-cover bg-center`} style={v.videoUrl ? { backgroundImage: 'linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1))' } : {}}>
-                                {!v.videoUrl && <div className="w-full h-full rounded-lg bg-opacity-50 flex items-center justify-center"><PlayCircle size={20} className="text-white/50"/></div>}
+                            <div className={`w-24 h-16 ${v.color} rounded-lg flex-shrink-0 bg-cover bg-center`} style={v.youtubeVideoId ? { backgroundImage: `url(https://img.youtube.com/vi/${v.youtubeVideoId}/maxresdefault.jpg)` } : {}}>
+                                {!v.youtubeVideoId && <div className="w-full h-full rounded-lg bg-opacity-50 flex items-center justify-center"><PlayCircle size={20} className="text-white/50"/></div>}
                             </div>
                             <div>
                                 <h4 className="font-bold text-sm text-slate-800 dark:text-white line-clamp-2 group-hover:text-eggplant transition-colors">{v.title}</h4>
-                                <p className="text-xs text-slate-500 mt-1">{v.author}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{v.author}</p>
                             </div>
                         </div>
                     ))}

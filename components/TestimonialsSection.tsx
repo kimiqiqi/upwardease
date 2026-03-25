@@ -87,13 +87,13 @@ export const TestimonialsSection = () => {
                           <img src={review.avatar} alt={review.author} referrerPolicy="no-referrer" className={`w-16 h-16 rounded-full object-cover border-2 border-white dark:border-slate-600 shadow-md ${review.color}`} />
                         ) : (
                           <div className={`w-16 h-16 rounded-full ${review.color} flex items-center justify-center border-2 border-white dark:border-slate-600 shadow-md`}>
-                            <User size={24} className="text-slate-700 opacity-50" />
+                            <User size={24} className="text-slate-700 dark:text-slate-300 opacity-50" />
                           </div>
                         )}
                       </div>
                       <div>
                         <p className="font-bold text-eggplant dark:text-white text-lg">{review.author}</p>
-                        <p className="text-slate-500 text-sm uppercase tracking-wide font-semibold">{review.role}</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wide font-semibold">{review.role}</p>
                       </div>
                    </div>
                 </div>
@@ -105,7 +105,7 @@ export const TestimonialsSection = () => {
                      </div>
                    ) : (
                      <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full ${review.color} flex items-center justify-center border-4 border-white dark:border-slate-600 shadow-xl transform rotate-3 hover:rotate-0 transition-transform duration-500`}>
-                        <User size={64} className="text-slate-700 opacity-50" />
+                        <User size={64} className="text-slate-700 dark:text-slate-300 opacity-50" />
                      </div>
                    )}
                 </div>

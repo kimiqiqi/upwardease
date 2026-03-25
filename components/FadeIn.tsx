@@ -7,6 +7,7 @@ interface FadeInProps {
   direction?: 'up' | 'down' | 'left' | 'right' | 'none';
   fullWidth?: boolean;
   onClick?: () => void;
+  key?: React.Key;
 }
 
 export const FadeIn = ({ children, delay = 0, className = "", direction = 'up', fullWidth = false, onClick }: FadeInProps) => {

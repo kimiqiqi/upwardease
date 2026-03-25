@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { ArrowDown } from "lucide-react";
+import { Logo } from "./Logo";
+import { TabType } from "../types";
 
-export const Footer = ({ navigate, darkMode }: { navigate: (tab: any) => void, darkMode: boolean }) => {
+export const Footer = ({ navigate, darkMode }: { navigate: (tab: TabType) => void, darkMode: boolean }) => {
   const [greeting, setGreeting] = useState("Good Morning");
 
   useEffect(() => {
@@ -21,6 +23,7 @@ export const Footer = ({ navigate, darkMode }: { navigate: (tab: any) => void, d
   return (
     <footer className={`border-t py-12 mt-auto text-center ${darkMode ? "bg-slate-900 border-slate-800 text-slate-400" : "bg-cream border-slate-200 text-slate-500"}`}>
       <div className="flex flex-col items-center justify-center gap-4 mb-8">
+         <Logo onClick={() => navigate("home")} darkMode={darkMode} className="mb-2" />
          <p className="font-serif text-lg text-eggplant dark:text-white">{greeting}!</p>
          <ArrowDown className="text-accent-orange animate-bounce" />
       </div>

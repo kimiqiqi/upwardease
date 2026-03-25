@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import { Sparkles, Menu, X, Sun, Moon, LogOut, AlertCircle, Heart } from "lucide-react";
-import { UserType } from "../types";
+import { Sparkles, Menu, X, Sun, Moon, LogOut, AlertCircle, Heart, Bell } from "lucide-react";
+import { UserType, TabType } from "../types";
 import { SpotlightButton } from "./SpotlightButton";
+import { Logo } from "./Logo";
 
-export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setDarkMode }: { activeTab: string, setActiveTab: (t: any) => void, user: UserType, onLogout: () => void, darkMode: boolean, setDarkMode: (m: boolean) => void }) => {
+export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setDarkMode, markNotificationsAsRead }: { activeTab: TabType, setActiveTab: (t: TabType) => void, user: UserType, onLogout: () => void, darkMode: boolean, setDarkMode: (m: boolean) => void, markNotificationsAsRead?: () => void }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
-  const NavItem = ({ id, label }: { id: string, label: string }) => (
+  const unreadCount = user?.notificationsList?.filter(n => !n.read).length || 0;
+
+  const NavItem = ({ id, label }: { id: TabType, label: string }) => (
     <button 
       onClick={() => { setActiveTab(id); setMobileMenuOpen(false); }}
       className={`text-sm font-bold transition-colors ${activeTab === id ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500 hover:text-eggplant dark:text-slate-400 dark:hover:text-white"}`}
@@ -17,11 +21,7 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
   );
 
   const handleAvatarClick = () => {
-    if (user?.role === 'admin') {
-      setActiveTab('admin');
-    } else {
-      setActiveTab('profile');
-    }
+    setActiveTab('profile');
   };
 
   const handleLogoutClick = () => {
@@ -39,31 +39,26 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab("home")}>
-            <div className={`p-2 rounded-lg ${darkMode ? "bg-teal-900" : "bg-eggplant"}`}>
-               <Sparkles className="w-5 h-5 text-accent-orange" />
-            </div>
-            <span className={`font-serif font-bold text-xl ${darkMode ? "text-white" : "text-eggplant"}`}>UpwardEase</span>
-          </div>
+          <Logo onClick={() => setActiveTab("home")} darkMode={darkMode} />
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             <NavItem id="home" label="Who We Are" />
             <NavItem id="about" label="Our Mission" />
             
-            {/* Gallery: Visible to guests and students, hidden for admins */}
-            {(!user || user.role !== 'admin') && <NavItem id="gallery" label="Gallery" />}
+            {/* Gallery: Visible to all */}
+            <NavItem id="gallery" label="Gallery" />
             
             {/* Share Story: Public or Student only */}
-            {(!user || user.role === 'student') && <NavItem id="upload" label="Share Story" />}
+            {(!user || user.role === 'user') && <NavItem id="upload" label="Share Story" />}
             
             <NavItem id="contact" label="Contact Us" />
             
-            {/* Profile: Student only */}
-            {user && user.role === 'student' && <NavItem id="profile" label="My Page" />}
+            {/* Profile: Both Student and Admin */}
+            {user && <NavItem id="profile" label="My Profile" />}
             
             {/* Admin Dashboard: Admin only */}
-            {user && user.role === 'admin' && <NavItem id="admin" label="Admin Dashboard" />}
+            {user && (user.role === 'admin' || user.role === 'superadmin') && <NavItem id="admin" label="Admin Dashboard" />}
           </nav>
 
           {/* User & Theme Actions */}
@@ -76,15 +71,58 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
             </button>
             
             {user ? (
-              <div className="flex items-center gap-3 pl-4 border-l border-slate-300 dark:border-slate-700">
+              <div className="flex items-center gap-3 pl-4 border-l border-slate-300 dark:border-slate-700 relative">
+                
+                {/* Notifications Bell */}
+                <div className="relative">
+                  <button 
+                    onClick={() => {
+                      setShowNotifications(!showNotifications);
+                      if (!showNotifications && markNotificationsAsRead) {
+                        markNotificationsAsRead();
+                      }
+                    }} 
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors relative"
+                  >
+                    <Bell size={18} className={darkMode ? "text-white" : "text-eggplant"} />
+                    {unreadCount > 0 && !showNotifications && (
+                      <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                    )}
+                  </button>
+                  
+                  {/* Notifications Dropdown */}
+                  {showNotifications && (
+                    <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50">
+                      <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <h3 className="font-bold text-slate-900 dark:text-white">Notifications</h3>
+                        {unreadCount > 0 && <span className="text-xs bg-eggplant text-white px-2 py-0.5 rounded-full">{unreadCount} New</span>}
+                      </div>
+                      <div className="max-h-80 overflow-y-auto">
+                        {!user.notificationsList || user.notificationsList.length === 0 ? (
+                          <div className="p-6 text-center text-slate-500 text-sm">
+                            No notifications yet.
+                          </div>
+                        ) : (
+                          user.notificationsList.map(notif => (
+                            <div key={notif.id} className={`p-4 border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!notif.read ? 'bg-slate-50/50 dark:bg-slate-700/20' : ''}`}>
+                              <p className="text-sm text-slate-800 dark:text-slate-200">{notif.message}</p>
+                              <p className="text-xs text-slate-400 mt-1">{new Date(notif.date).toLocaleDateString()}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="text-right hidden lg:block">
                   <p className={`text-sm font-bold ${darkMode ? "text-white" : "text-eggplant"}`}>{user.name}</p>
-                  <p className="text-xs text-slate-500 uppercase">{user.role}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">{user.role}</p>
                 </div>
                 <div 
                   className="w-8 h-8 rounded-full bg-accent-green flex items-center justify-center text-white font-bold cursor-pointer hover:opacity-80 transition-opacity" 
                   onClick={handleAvatarClick}
-                  title={user.role === 'admin' ? "Go to Dashboard" : "Go to Profile"}
+                  title="Go to Profile"
                 >
                    {user.name.charAt(0)}
                 </div>
@@ -116,14 +154,14 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
             <NavItem id="home" label="Who We Are" />
             <NavItem id="about" label="Our Mission" />
             
-            {(!user || user.role !== 'admin') && <NavItem id="gallery" label="Gallery" />}
+            <NavItem id="gallery" label="Gallery" />
             
-            {(!user || user.role === 'student') && <NavItem id="upload" label="Share Story" />}
+            {(!user || user.role === 'user') && <NavItem id="upload" label="Share Story" />}
             
             <NavItem id="contact" label="Contact Us" />
             
-            {user && user.role === 'student' && <NavItem id="profile" label="My Page" />}
-            {user && user.role === 'admin' && <NavItem id="admin" label="Admin Dashboard" />}
+            {user && <NavItem id="profile" label="My Profile" />}
+            {user && (user.role === 'admin' || user.role === 'superadmin') && <NavItem id="admin" label="Admin Dashboard" />}
             
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4 flex justify-between items-center">
                <a href="https://donate.stripe.com/test" target="_blank" rel="noopener noreferrer" className="text-accent-orange font-bold text-sm flex items-center gap-1">

@@ -1,7 +1,7 @@
 import React from "react";
 import { Target, Star, Heart, Sparkles } from "lucide-react";
 
-export const MissionSection = () => {
+export const MissionSection = ({ navigate }: { navigate?: (tab: any) => void }) => {
   return (
     <section className="bg-white dark:bg-slate-800 rounded-3xl p-8 md:p-16 border border-slate-100 dark:border-slate-700 shadow-xl overflow-hidden relative">
       <div className="flex flex-col md:flex-row items-center gap-12">
@@ -32,7 +32,10 @@ export const MissionSection = () => {
                We are a nonprofit on a mission to create a safe digital environment where students can vent about academic pressure and share strategies for success. 
                We bridge the gap between stress and support so that all students have an equal opportunity to achieve mental well-being and academic upward mobility.
             </p>
-            <button className="text-eggplant dark:text-teal-400 font-bold border-b-2 border-eggplant dark:border-teal-400 hover:opacity-80 transition-opacity uppercase text-sm tracking-wider pb-1">
+            <button 
+               onClick={() => navigate && navigate("about")}
+               className="text-eggplant dark:text-teal-400 font-bold border-b-2 border-eggplant dark:border-teal-400 hover:opacity-80 transition-opacity uppercase text-sm tracking-wider pb-1"
+            >
                Explore Our Mission
             </button>
          </div>

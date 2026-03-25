@@ -1,8 +1,10 @@
 import React from "react";
 import { FadeIn } from "../components/FadeIn";
 import { Scale, ShieldAlert, AlertTriangle, Users, FileText, ArrowLeft } from "lucide-react";
+import { LogoIcon } from "../components/Logo";
+import { TabType } from "../types";
 
-export const TermsView = ({ navigate, previousTab }: { navigate: (tab: any) => void, previousTab?: string }) => {
+export const TermsView = ({ navigate, previousTab }: { navigate: (tab: TabType) => void, previousTab?: TabType | "gallery" }) => {
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
       <FadeIn direction="down" className="text-center mb-12 relative">
@@ -13,9 +15,7 @@ export const TermsView = ({ navigate, previousTab }: { navigate: (tab: any) => v
           <ArrowLeft size={20} />
           <span className="font-bold hidden sm:inline">Back</span>
         </button>
-        <div className="w-16 h-16 bg-eggplant/10 dark:bg-teal-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Scale className="w-8 h-8 text-eggplant dark:text-teal-400" />
-        </div>
+        <LogoIcon className="w-16 h-16 mb-6 mx-auto" />
         <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-4">
           Terms of Service
         </h1>

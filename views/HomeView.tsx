@@ -4,8 +4,9 @@ import { MissionSection } from "../components/MissionSection";
 import { TestimonialsSection } from "../components/TestimonialsSection";
 import { SpotlightButton } from "../components/SpotlightButton";
 import { FadeIn } from "../components/FadeIn";
+import { TabType } from "../types";
 
-export const HomeView = ({ navigate }: { navigate: (tab: any) => void }) => {
+export const HomeView = ({ navigate }: { navigate: (tab: TabType) => void }) => {
   const [pollSelection, setPollSelection] = useState<number | null>(null);
 
   // Fixed topic data (AI features removed)
@@ -86,7 +87,7 @@ export const HomeView = ({ navigate }: { navigate: (tab: any) => void }) => {
 
       {/* MISSION SECTION */}
       <FadeIn>
-         <MissionSection />
+         <MissionSection navigate={navigate} />
       </FadeIn>
 
       {/* USER REVIEWS */}
@@ -94,19 +95,19 @@ export const HomeView = ({ navigate }: { navigate: (tab: any) => void }) => {
         <TestimonialsSection />
       </FadeIn>
 
-      {/* WEEKLY FEATURED TOPIC */}
+      {/* MONTHLY FEATURED TOPIC */}
       <FadeIn>
         <section className="bg-white dark:bg-slate-800 rounded-3xl p-8 md:p-16 border border-slate-100 dark:border-slate-700 shadow-xl">
             <div className="flex flex-col lg:flex-row gap-12 items-center">
             <div className="flex-1 space-y-6">
                 <div className="inline-block bg-accent-orange/20 text-accent-orange px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide">
-                Weekly Focus
+                Monthly Focus
                 </div>
                 <h2 className="font-serif text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">{topicData.topicTitle}</h2>
                 <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">{topicData.topicDescription}</p>
                 <div className="bg-cream dark:bg-slate-900 p-6 rounded-2xl inline-flex items-start gap-4 border border-slate-100 dark:border-slate-700">
-                <div className="bg-yellow-100 p-2 rounded-full">
-                    <Lightbulb className="w-6 h-6 text-yellow-600 flex-shrink-0"/>
+                <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded-full">
+                    <Lightbulb className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0"/>
                 </div>
                 <div>
                     <h4 className="font-bold text-slate-800 dark:text-white text-lg font-serif">Have a tip?</h4>
@@ -151,8 +152,8 @@ export const HomeView = ({ navigate }: { navigate: (tab: any) => void }) => {
         </FadeIn>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            {[
-             { icon: <Video className="w-8 h-8 text-eggplant dark:text-teal-300" />, title: "Record", text: "Film a short video sharing a study tip or how you cope with stress." },
-             { icon: <Upload className="w-8 h-8 text-eggplant dark:text-teal-300" />, title: "Upload", text: "Submit your video. Our team reviews it to ensure a safe environment." },
+             { icon: <Video className="w-8 h-8 text-eggplant dark:text-teal-300" />, title: "Record", text: "Film a short video sharing a study tip or how you cope with stress and upload it to YouTube." },
+             { icon: <Upload className="w-8 h-8 text-eggplant dark:text-teal-300" />, title: "Submit", text: "Submit your YouTube link. Our team reviews it to ensure a safe environment." },
              { icon: <Heart className="w-8 h-8 text-eggplant dark:text-teal-300" />, title: "Support", text: "Your video helps other students feel less alone and more prepared." }
            ].map((item, i) => (
              <FadeIn key={i} delay={i * 150} className="h-full">

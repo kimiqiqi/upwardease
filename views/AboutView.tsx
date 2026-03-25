@@ -1,13 +1,15 @@
 import React from "react";
 import { FadeIn } from "../components/FadeIn";
 import { Shield, Heart, Users, Video, Upload, MessageCircle } from "lucide-react";
+import { LogoIcon } from "../components/Logo";
 
 export const AboutView = () => {
   return (
     <div className="space-y-24 py-12">
       {/* Header Section */}
-      <div className="text-center max-w-3xl mx-auto">
+      <div className="text-center max-w-3xl mx-auto flex flex-col items-center">
         <FadeIn direction="down">
+          <LogoIcon className="w-16 h-16 mb-6 mx-auto" />
           <h1 className="font-serif text-5xl font-bold text-slate-900 dark:text-white mb-6">
             Our Mission & How We Help
           </h1>

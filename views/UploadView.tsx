@@ -1,17 +1,23 @@
-import React, { useState, useRef } from "react";
-import { User, AlertCircle, Upload, Loader2, FileVideo, X } from "lucide-react";
-import { UserType, VideoType } from "../types";
+import React, { useState, useEffect } from "react";
+import { User, AlertCircle, Loader2, Youtube, X, CheckCircle2 } from "lucide-react";
+import { UserType, VideoType, TabType } from "../types";
 import { SpotlightButton } from "../components/SpotlightButton";
 import { FadeIn } from "../components/FadeIn";
+import { extractYouTubeId, getYouTubeEmbedUrl } from "../utils/youtube";
 
-export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navigate: any, setVideos: any }) => {
+export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserType, navigate: (tab: TabType) => void, videos: VideoType[], setVideos: React.Dispatch<React.SetStateAction<VideoType[]>> }) => {
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
+  
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [actionStep, setActionStep] = useState("");
+  const [resourceLink, setResourceLink] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [urlError, setUrlError] = useState("");
 
   const suggestions = [
       "time management", "stress", "college prep", 
@@ -19,11 +25,21 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
       "ap", "ib", "sat/act", "productivity", "motivation"
   ];
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
-          setSelectedFile(e.target.files[0]);
+  useEffect(() => {
+    if (youtubeUrl) {
+      const id = extractYouTubeId(youtubeUrl);
+      if (id) {
+        setYoutubeVideoId(id);
+        setUrlError("");
+      } else {
+        setYoutubeVideoId(null);
+        setUrlError("Invalid YouTube URL. Please check the link and try again.");
       }
-  };
+    } else {
+      setYoutubeVideoId(null);
+      setUrlError("");
+    }
+  }, [youtubeUrl]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
@@ -51,21 +67,35 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!selectedFile) {
-        alert("Please select a video file first.");
+    
+    if (!youtubeVideoId) {
+        alert("Please provide a valid YouTube link first.");
         return;
     }
+
     if (tags.length === 0) {
         alert("Please add at least one tag.");
         return;
     }
+    if (!agreedToTerms) {
+        alert("Please agree to the community guidelines.");
+        return;
+    }
+
+    // Check for duplicate submission
+    const isDuplicate = videos.some(v => v.youtubeVideoId === youtubeVideoId);
+    if (isDuplicate) {
+        alert("This video has already been submitted to UpwardEase.");
+        return;
+    }
 
     setUploading(true);
-    // Simulate upload delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Create a local URL for the video file so it can be played in the session
-    const videoUrl = URL.createObjectURL(selectedFile);
+    // Simulate submission delay for youtube
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const colors = ["bg-accent-orange", "bg-accent-green", "bg-eggplant", "bg-blue-500", "bg-purple-500", "bg-pink-500"];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
     // Add new pending video with user profile data
     const newVideo: VideoType = {
@@ -73,19 +103,24 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
       title,
       description,
       author: user.name,
-      uploaderId: user.id,
+      submittedBy: user.id,
+      sourceType: 'youtube',
+      youtubeVideoId: youtubeVideoId,
+      originalUrl: youtubeUrl,
       grade: user.grade || "Community Member",
       views: 0,
       category: tags[0], // Primary category is the first tag
       tags: tags,
-      color: "bg-gray-100",
+      color: randomColor,
       likes: 0,
       likedBy: [],
       comments: [],
       status: "pending",
-      feedback: "",
-      uploadedAt: new Date().toISOString(),
-      videoUrl: videoUrl
+      reviewNote: "",
+      createdAt: new Date().toISOString(),
+      reportCount: 0,
+      actionStep: actionStep.trim() || undefined,
+      resourceLink: resourceLink.trim() || undefined,
     };
     
     setVideos((prev: VideoType[]) => [...prev, newVideo]);
@@ -103,7 +138,7 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
          </FadeIn>
          <FadeIn delay={100}>
             <h2 className="text-2xl font-serif font-bold dark:text-white">Please Login to Share</h2>
-            <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-2">You need to be a member of our community to upload videos. This helps us keep the space safe for everyone.</p>
+            <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-2">You need to be a member of our community to submit videos. This helps us keep the space safe for everyone.</p>
          </FadeIn>
          <FadeIn delay={200}>
             <button onClick={() => navigate("login")} className="bg-eggplant text-white px-6 py-3 rounded-full font-bold">Log In Now</button>
@@ -112,45 +147,50 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
     );
   }
 
+  const isSubmitDisabled = uploading || !youtubeVideoId || !agreedToTerms;
+
   return (
     <div className="max-w-2xl mx-auto py-8">
       <FadeIn direction="up">
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-700">
-        <h2 className="text-3xl font-serif font-bold text-eggplant dark:text-white mb-6">Share Your Story</h2>
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6 text-sm text-blue-800 flex gap-2">
+        <h2 className="text-3xl font-serif font-bold text-eggplant dark:text-white mb-6">Submit a Video</h2>
+
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl mb-6 text-sm text-blue-800 dark:text-blue-200 flex gap-2">
             <AlertCircle size={20} className="shrink-0" />
-            <p>All uploads are reviewed by our volunteer admins to ensure a safe environment. Your video will appear as "Pending" until approved.</p>
+            <p>All submissions are reviewed by our volunteer admins before appearing publicly.</p>
         </div>
+        
         <form onSubmit={handleUpload} className="space-y-6">
           
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileSelect} 
-            accept="video/*" 
-            className="hidden" 
-          />
-          
-          <div 
-            onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${selectedFile ? 'border-eggplant bg-purple-50 dark:bg-slate-700 dark:border-teal-500' : 'border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
-          >
-             {selectedFile ? (
-                 <>
-                    <FileVideo size={48} className="text-eggplant dark:text-teal-400 mb-4" />
-                    <p className="font-bold text-eggplant dark:text-teal-400">{selectedFile.name}</p>
-                    <p className="text-sm text-slate-500 mt-2">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                    <button type="button" className="mt-6 text-red-500 text-sm font-bold hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}>Remove File</button>
-                 </>
-             ) : (
-                 <>
-                    <Upload size={48} className="text-slate-300 dark:text-slate-500 mb-4" />
-                    <p className="font-bold text-slate-700 dark:text-slate-300">Drag and drop your video here</p>
-                    <p className="text-sm text-slate-400 mt-2">MP4, WebM up to 50MB</p>
-                    <button type="button" className="mt-6 bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 px-4 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-200">Select File</button>
-                 </>
-             )}
-          </div>
+                  <div>
+                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">YouTube Link *</label>
+                     <div className="relative">
+                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                             <Youtube className="h-5 w-5 text-slate-400" />
+                         </div>
+                         <input 
+                            type="url" 
+                            value={youtubeUrl} 
+                            onChange={(e) => setYoutubeUrl(e.target.value)} 
+                            required 
+                            className={`w-full pl-10 pr-4 py-3 rounded-xl border ${urlError ? 'border-red-300 focus:ring-red-500' : 'border-slate-200 dark:border-slate-600 focus:ring-eggplant'} bg-slate-50 dark:bg-slate-700 dark:text-white outline-none focus:ring-2`} 
+                            placeholder="https://www.youtube.com/watch?v=..." 
+                         />
+                     </div>
+                     {urlError && <p className="mt-2 text-sm text-red-500">{urlError}</p>}
+                  </div>
+
+                  {youtubeVideoId && (
+                      <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 aspect-video relative">
+                          <iframe
+                              src={getYouTubeEmbedUrl(youtubeVideoId)}
+                              title="YouTube video player"
+                              className="absolute top-0 left-0 w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                          ></iframe>
+                      </div>
+                  )}
 
           <div>
              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Title *</label>
@@ -195,8 +235,42 @@ export const UploadView = ({ user, navigate, setVideos }: { user: UserType, navi
             </div>
           </div>
 
-          <SpotlightButton disabled={uploading} className="w-full bg-eggplant text-white py-4 rounded-xl font-bold hover:bg-eggplant-dark transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
-            {uploading ? <><Loader2 className="animate-spin"/> Uploading...</> : "Submit for Review"}
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">Optional Details</h3>
+             
+             <div className="mb-4">
+                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Action Step / Reflection Prompt</label>
+                 <input type="text" value={actionStep} onChange={(e) => setActionStep(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-eggplant" placeholder="e.g. Try writing down three things you're grateful for today." />
+                 <p className="text-xs text-slate-500 mt-1">Give viewers a small, positive action to take after watching.</p>
+             </div>
+
+             <div>
+                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Resource Link</label>
+                 <input type="url" value={resourceLink} onChange={(e) => setResourceLink(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-eggplant" placeholder="https://..." />
+                 <p className="text-xs text-slate-500 mt-1">Link to a helpful article, tool, or support resource related to your video.</p>
+             </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center mt-0.5">
+                      <input 
+                          type="checkbox" 
+                          checked={agreedToTerms} 
+                          onChange={(e) => setAgreedToTerms(e.target.checked)} 
+                          className="peer sr-only" 
+                      />
+                      <div className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 peer-checked:bg-eggplant peer-checked:border-eggplant transition-colors"></div>
+                      <CheckCircle2 className="absolute text-white opacity-0 peer-checked:opacity-100 w-4 h-4 transition-opacity" />
+                  </div>
+                  <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
+                      I confirm that this video follows the UpwardEase Community Guidelines and does not contain harmful, hateful, or explicit content. I understand that my submission will be reviewed before being published.
+                  </span>
+              </label>
+          </div>
+
+          <SpotlightButton disabled={isSubmitDisabled} className="w-full bg-eggplant text-white py-4 rounded-xl font-bold hover:bg-eggplant-dark transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+            {uploading ? <><Loader2 className="animate-spin"/> Submitting...</> : "Submit for Review"}
           </SpotlightButton>
         </form>
       </div>

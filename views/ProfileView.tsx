@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import { Plus, AlertCircle, PlayCircle, RotateCcw, Send, GraduationCap, School, MapPin, Settings, X, Save, User, ArrowDown, Loader2, Quote } from "lucide-react";
-import { UserType, VideoType } from "../types";
+import { Plus, AlertCircle, PlayCircle, RotateCcw, Send, GraduationCap, School, MapPin, Settings, X, Save, User, ArrowDown, Loader2, Quote, Bell, Mail, Lock, Trophy, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { UserType, VideoType, AdminRequestType, TabType } from "../types";
 import { FadeIn } from "../components/FadeIn";
 
 // Extracted VideoList component to prevent re-rendering issues
@@ -23,19 +23,27 @@ const VideoList = ({
     setAppealReason: (val: string) => void,
     handleAppeal: (id: number) => void
 }) => {
-    if (items.length === 0) return <div className="text-center py-12 text-slate-500">No videos found.</div>;
+    if (items.length === 0) return <div className="text-center py-12 text-slate-500 dark:text-slate-400">No videos found.</div>;
     
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((video, index) => (
                 <FadeIn key={video.id} delay={index * 50} className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col">
-                    <div onClick={() => video.status === 'approved' && onVideoClick(video.id)} className={`aspect-video ${video.color} relative flex items-center justify-center ${video.status === 'approved' ? 'cursor-pointer' : 'opacity-75'}`}>
-                        <PlayCircle size={48} className="text-slate-900/50" />
+                    <div onClick={() => video.status === 'approved' && onVideoClick(video.id)} className={`aspect-video ${video.color} relative flex items-center justify-center overflow-hidden ${video.status === 'approved' ? 'cursor-pointer' : 'opacity-75'}`}>
+                        {video.sourceType === 'youtube' && video.youtubeVideoId ? (
+                            <img 
+                                src={`https://img.youtube.com/vi/${video.youtubeVideoId}/hqdefault.jpg`} 
+                                alt={video.title}
+                                className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity"
+                            />
+                        ) : null}
+                        <PlayCircle size={48} className="text-slate-900/50 absolute" />
                         {showStatus && (
                             <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold uppercase ${
-                                video.status === 'approved' ? 'bg-green-100 text-green-700' :
-                                video.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                'bg-yellow-100 text-yellow-700'
+                                video.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                                video.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                                video.status === 'removed' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                                'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                             }`}>
                                 {video.status.replace('_', ' ')}
                             </div>
@@ -45,15 +53,19 @@ const VideoList = ({
                         <h3 className="font-bold text-slate-900 dark:text-white mb-1 line-clamp-1">{video.title}</h3>
                         <p className="text-xs text-slate-500">{video.views} views</p>
                         
-                        {showStatus && video.status === 'rejected' && (
-                            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900 text-xs">
-                                <p className="font-bold text-red-800 dark:text-red-400 mb-1">Admin Feedback:</p>
-                                <p className="text-red-700 dark:text-red-300 mb-3">{video.feedback || "No feedback provided."}</p>
+                        {showStatus && (video.status === 'rejected' || video.status === 'removed') && (
+                            <div className={`mt-4 p-3 rounded-lg border text-xs ${video.status === 'removed' ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-900' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900'}`}>
+                                <p className={`font-bold mb-1 ${video.status === 'removed' ? 'text-orange-800 dark:text-orange-400' : 'text-red-800 dark:text-red-400'}`}>Admin Feedback:</p>
+                                <p className={`mb-3 ${video.status === 'removed' ? 'text-orange-700 dark:text-orange-300' : 'text-red-700 dark:text-red-300'}`}>{video.reviewNote || "No feedback provided."}</p>
                                 
-                                {appealingVideoId === video.id ? (
+                                {video.appealReason ? (
+                                    <div className={`w-full py-2 bg-slate-100 dark:bg-slate-800 border rounded font-bold text-center flex items-center justify-center gap-2 ${video.status === 'removed' ? 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400'}`}>
+                                        <CheckCircle2 size={14}/> Appeal Submitted
+                                    </div>
+                                ) : appealingVideoId === video.id ? (
                                     <div className="mt-2 animate-in fade-in">
                                         <textarea 
-                                            className="w-full p-2 rounded border border-red-200 dark:border-red-800 mb-2 dark:bg-slate-800 dark:text-white"
+                                            className={`w-full p-2 rounded border mb-2 dark:bg-slate-800 dark:text-white ${video.status === 'removed' ? 'border-orange-200 dark:border-orange-800' : 'border-red-200 dark:border-red-800'}`}
                                             placeholder="Why should this be reconsidered?"
                                             rows={2}
                                             value={appealReason}
@@ -63,13 +75,13 @@ const VideoList = ({
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={() => handleAppeal(video.id)}
-                                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 w-full flex items-center justify-center gap-1"
+                                                className={`text-white px-3 py-1 rounded w-full flex items-center justify-center gap-1 ${video.status === 'removed' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-red-600 hover:bg-red-700'}`}
                                             >
                                                 <Send size={12}/> Submit
                                             </button>
                                             <button 
                                                 onClick={() => { setAppealingVideoId(null); setAppealReason(""); }}
-                                                className="bg-white border border-red-200 text-red-600 px-3 py-1 rounded hover:bg-red-50 w-full"
+                                                className={`px-3 py-1 rounded w-full border bg-white dark:bg-slate-800 ${video.status === 'removed' ? 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30'}`}
                                             >
                                                 Cancel
                                             </button>
@@ -78,7 +90,7 @@ const VideoList = ({
                                 ) : (
                                     <button 
                                         onClick={() => setAppealingVideoId(video.id)}
-                                        className="w-full py-2 bg-white border border-red-200 text-red-600 rounded font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                        className={`w-full py-2 bg-white dark:bg-slate-800 border rounded font-bold transition-colors flex items-center justify-center gap-2 ${video.status === 'removed' ? 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30'}`}
                                     >
                                         <RotateCcw size={14}/> Appeal Decision
                                     </button>
@@ -100,35 +112,79 @@ export const ProfileView = ({
     starredVideoIds, 
     historyVideoIds, 
     onVideoClick, 
-    navigate 
+    navigate,
+    adminRequests,
+    setAdminRequests
 }: { 
     user: UserType, 
     setUser: (u: UserType) => void,
     videos: VideoType[], 
-    setVideos: any, 
+    setVideos: React.Dispatch<React.SetStateAction<VideoType[]>>, 
     starredVideoIds: number[], 
     historyVideoIds: number[], 
     onVideoClick: (id: number) => void, 
-    navigate: any 
+    navigate: (tab: TabType) => void,
+    adminRequests: AdminRequestType[],
+    setAdminRequests: (reqs: AdminRequestType[]) => void
 }) => {
-    const [tab, setTab] = useState<"uploads" | "favorites" | "history">("uploads");
+    const [tab, setTab] = useState<"uploads" | "favorites" | "history" | "achievements">("uploads");
     const [appealingVideoId, setAppealingVideoId] = useState<number | null>(null);
     const [appealReason, setAppealReason] = useState("");
     
     // Edit Profile State
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", grade: "", school: "", age: "", bio: "" });
+    const [editForm, setEditForm] = useState({ 
+        name: "", emailOrPhone: "", grade: "", school: "", age: "", bio: "",
+        notifications: true, emailUpdates: false, privateProfile: false
+    });
 
     // Pull to Refresh State
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [pullY, setPullY] = useState(0);
     const touchStartY = useRef(0);
 
+    // Admin Application State
+    const [adminMessage, setAdminMessage] = useState("");
+    const [isApplyingForAdmin, setIsApplyingForAdmin] = useState(false);
+
     if (!user) return null;
 
-    const myUploads = videos.filter(v => v.uploaderId === user.id);
+    const myUploads = videos.filter(v => v.submittedBy === user.id);
     const myFavorites = videos.filter(v => starredVideoIds.includes(v.id));
     const myHistory = videos.filter(v => historyVideoIds.includes(v.id));
+
+    const myAdminRequest = adminRequests.find(req => req.userId === user.id);
+
+    const handleApplyForAdmin = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (myAdminRequest?.status === 'rejected') {
+            // It's an appeal
+            const updatedRequests = adminRequests.map(req => 
+                req.userId === user.id ? {
+                    ...req,
+                    status: 'pending' as const,
+                    appealReason: adminMessage,
+                    reviewedBy: undefined,
+                    reviewedAt: undefined
+                } : req
+            );
+            setAdminRequests(updatedRequests);
+        } else {
+            // New request
+            const newRequest: AdminRequestType = {
+                id: `req-${Date.now()}`,
+                userId: user.id,
+                motivation: adminMessage,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+            };
+            setAdminRequests([...adminRequests, newRequest]);
+        }
+        
+        setIsApplyingForAdmin(false);
+        setAdminMessage("");
+    };
 
     const handleAppeal = (id: number) => {
         if (!appealReason.trim()) return;
@@ -136,7 +192,6 @@ export const ProfileView = ({
         setVideos((prev: VideoType[]) => prev.map(v => 
             v.id === id ? { 
                 ...v, 
-                status: 'needs_review', // Send back to admin
                 appealReason: appealReason,
             } : v
         ));
@@ -148,23 +203,35 @@ export const ProfileView = ({
     const handleEditClick = () => {
         setEditForm({
             name: user.name,
+            emailOrPhone: user.email || user.phone || "",
             grade: user.grade || "",
             school: user.school || "",
             age: user.age || "",
-            bio: user.bio || ""
+            bio: user.bio || "",
+            notifications: user.preferences?.notifications ?? true,
+            emailUpdates: user.preferences?.emailUpdates ?? false,
+            privateProfile: user.preferences?.privateProfile ?? false
         });
         setIsEditing(true);
     };
 
     const handleSaveProfile = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!user) return;
         setUser({
             ...user,
             name: editForm.name,
+            email: editForm.emailOrPhone.includes('@') ? editForm.emailOrPhone : undefined,
+            phone: !editForm.emailOrPhone.includes('@') && editForm.emailOrPhone ? editForm.emailOrPhone : undefined,
             grade: editForm.grade,
             school: editForm.school,
             age: editForm.age,
-            bio: editForm.bio
+            bio: editForm.bio,
+            preferences: {
+                notifications: editForm.notifications,
+                emailUpdates: editForm.emailUpdates,
+                privateProfile: editForm.privateProfile
+            }
         });
         setIsEditing(false);
     };
@@ -248,6 +315,19 @@ export const ProfileView = ({
                                 </div>
                             </div>
                             <div>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Email or Phone</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                                    <input 
+                                        type="text" 
+                                        required 
+                                        value={editForm.emailOrPhone}
+                                        onChange={(e) => setEditForm({...editForm, emailOrPhone: e.target.value})}
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-eggplant outline-none dark:text-white"
+                                    />
+                                </div>
+                            </div>
+                            <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Bio</label>
                                 <div className="relative">
                                     <Quote className="absolute left-3 top-3.5 text-slate-400" size={18} />
@@ -299,9 +379,61 @@ export const ProfileView = ({
                                     />
                                 </div>
                             </div>
+                            
+                            <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-4">
+                                <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <Settings size={18} className="text-eggplant dark:text-teal-400" /> Preferences
+                                </h4>
+                                
+                                <label className="flex items-center justify-between cursor-pointer">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                                            <Bell size={14} className="text-slate-600 dark:text-slate-300" />
+                                        </div>
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Push Notifications</span>
+                                    </div>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={editForm.notifications}
+                                        onChange={(e) => setEditForm({...editForm, notifications: e.target.checked})}
+                                        className="w-5 h-5 text-eggplant rounded focus:ring-eggplant"
+                                    />
+                                </label>
+                                
+                                <label className="flex items-center justify-between cursor-pointer">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                                            <Mail size={14} className="text-slate-600 dark:text-slate-300" />
+                                        </div>
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Email Updates</span>
+                                    </div>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={editForm.emailUpdates}
+                                        onChange={(e) => setEditForm({...editForm, emailUpdates: e.target.checked})}
+                                        className="w-5 h-5 text-eggplant rounded focus:ring-eggplant"
+                                    />
+                                </label>
+
+                                <label className="flex items-center justify-between cursor-pointer">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                                            <Lock size={14} className="text-slate-600 dark:text-slate-300" />
+                                        </div>
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Private Profile</span>
+                                    </div>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={editForm.privateProfile}
+                                        onChange={(e) => setEditForm({...editForm, privateProfile: e.target.checked})}
+                                        className="w-5 h-5 text-eggplant rounded focus:ring-eggplant"
+                                    />
+                                </label>
+                            </div>
+
                             <button 
                                 type="submit"
-                                className="w-full bg-eggplant text-white py-3 rounded-xl font-bold hover:bg-eggplant-dark transition-colors flex items-center justify-center gap-2"
+                                className="w-full bg-eggplant text-white py-3 rounded-xl font-bold hover:bg-eggplant-dark transition-colors flex items-center justify-center gap-2 mt-4"
                             >
                                 <Save size={18} /> Save Changes
                             </button>
@@ -320,7 +452,9 @@ export const ProfileView = ({
                             <div>
                                 <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">{user.name}</h2>
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500 text-sm">
-                                    <span className="font-bold text-eggplant dark:text-teal-300">{user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</span>
+                                    <span className="font-bold text-eggplant dark:text-teal-300">{user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</span>
+                                    {user.email && <span className="flex items-center gap-1"><Mail size={14}/> {user.email}</span>}
+                                    {user.phone && <span className="flex items-center gap-1"><Mail size={14}/> {user.phone}</span>}
                                     {user.grade && <span className="flex items-center gap-1"><GraduationCap size={14}/> {user.grade}</span>}
                                     {user.school && <span className="flex items-center gap-1"><School size={14}/> {user.school}</span>}
                                     {user.age && <span className="flex items-center gap-1"><MapPin size={14}/> {user.age} y/o</span>}
@@ -355,10 +489,77 @@ export const ProfileView = ({
                     </div>
                 </div>
 
+                {user.role === 'user' && (
+                    <div className="mb-8 bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                            <ShieldAlert size={20} className="text-eggplant dark:text-teal-400" /> 
+                            Become an Admin
+                        </h3>
+                        {myAdminRequest?.status === 'pending' ? (
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-4 rounded-xl border border-yellow-200 dark:border-yellow-800/50">
+                                <p className="font-bold">Your application is under review.</p>
+                                <p className="text-sm mt-1">We'll let you know once a decision has been made.</p>
+                            </div>
+                        ) : myAdminRequest?.status === 'approved' ? (
+                            <div className="bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 p-4 rounded-xl border border-green-200 dark:border-green-800/50">
+                                <p className="font-bold">Congratulations! You are an admin.</p>
+                                <p className="text-sm mt-1">Please log out and log back in to access the admin dashboard.</p>
+                            </div>
+                        ) : (
+                            <div>
+                                {myAdminRequest?.status === 'rejected' && (
+                                    <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 p-4 rounded-xl border border-red-200 dark:border-red-800/50 mb-4">
+                                        <p className="font-bold">Your previous application was not approved.</p>
+                                        <p className="text-sm mt-1">You can appeal this decision by providing more information below.</p>
+                                    </div>
+                                )}
+                                <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">
+                                    Help moderate content and support the UpwardEase community.
+                                </p>
+                                {!isApplyingForAdmin ? (
+                                    <button 
+                                        onClick={() => setIsApplyingForAdmin(true)}
+                                        className="bg-eggplant text-white px-4 py-2 rounded-lg font-bold hover:bg-eggplant-dark transition-colors text-sm"
+                                    >
+                                        {myAdminRequest?.status === 'rejected' ? 'Appeal Decision' : 'Apply Now'}
+                                    </button>
+                                ) : (
+                                    <form onSubmit={handleApplyForAdmin} className="space-y-3 animate-in fade-in">
+                                        <textarea
+                                            value={adminMessage}
+                                            onChange={(e) => setAdminMessage(e.target.value)}
+                                            placeholder={myAdminRequest?.status === 'rejected' ? "Why should we reconsider your application?" : "Why do you want to be an admin? (Optional)"}
+                                            className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 focus:ring-2 focus:ring-eggplant outline-none dark:text-white text-sm"
+                                            rows={3}
+                                            required={myAdminRequest?.status === 'rejected'}
+                                        />
+                                        <div className="flex gap-2">
+                                            <button 
+                                                type="submit"
+                                                className="bg-eggplant text-white px-4 py-2 rounded-lg font-bold hover:bg-eggplant-dark transition-colors text-sm"
+                                            >
+                                                {myAdminRequest?.status === 'rejected' ? 'Submit Appeal' : 'Submit Application'}
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={() => { setIsApplyingForAdmin(false); setAdminMessage(""); }}
+                                                className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="border-b border-slate-200 dark:border-slate-700 flex gap-6 overflow-x-auto">
-                    <button onClick={() => setTab("uploads")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "uploads" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>My Uploads</button>
-                    <button onClick={() => setTab("favorites")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "favorites" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>Favorites</button>
-                    <button onClick={() => setTab("history")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "history" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500"}`}>Watch History</button>
+                    <button onClick={() => setTab("uploads")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "uploads" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500 dark:text-slate-400"}`}>My Uploads</button>
+                    <button onClick={() => setTab("favorites")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "favorites" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500 dark:text-slate-400"}`}>Favorites</button>
+                    <button onClick={() => setTab("history")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "history" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500 dark:text-slate-400"}`}>Watch History</button>
+                    <button onClick={() => setTab("achievements")} className={`pb-3 font-bold text-sm whitespace-nowrap ${tab === "achievements" ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500 dark:text-slate-400"}`}>Achievements</button>
                 </div>
             </FadeIn>
 
@@ -400,9 +601,9 @@ export const ProfileView = ({
                                 <div className="text-sm text-slate-600 dark:text-slate-300">
                                 <p className="font-bold mb-1">Upload Status Guide</p>
                                 <ul className="list-disc pl-4 space-y-1">
-                                    <li><span className="text-green-600 font-bold">Approved:</span> Visible to everyone in the gallery.</li>
-                                    <li><span className="text-yellow-600 font-bold">Pending:</span> Currently being reviewed by our volunteers.</li>
-                                    <li><span className="text-red-600 font-bold">Rejected:</span> Does not meet guidelines. You may appeal if you believe this is an error.</li>
+                                    <li><span className="text-green-600 dark:text-green-400 font-bold">Approved:</span> Visible to everyone in the gallery.</li>
+                                    <li><span className="text-yellow-600 dark:text-yellow-400 font-bold">Pending:</span> Currently being reviewed by our volunteers.</li>
+                                    <li><span className="text-red-600 dark:text-red-400 font-bold">Rejected:</span> Does not meet guidelines. You may appeal if you believe this is an error.</li>
                                 </ul>
                                 </div>
                             </FadeIn>
@@ -411,6 +612,29 @@ export const ProfileView = ({
                     )}
                     {tab === "favorites" && <VideoList items={myFavorites} {...commonListProps} />}
                     {tab === "history" && <VideoList items={myHistory} {...commonListProps} />}
+                    {tab === "achievements" && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {user.achievements && user.achievements.length > 0 ? (
+                                user.achievements.map((ach, idx) => (
+                                    <FadeIn key={ach.id} delay={idx * 100} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex items-start gap-4">
+                                        <div className="w-16 h-16 rounded-full bg-eggplant/10 dark:bg-teal-900/30 flex items-center justify-center text-3xl shrink-0">
+                                            {ach.icon}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 dark:text-white text-lg mb-1">{ach.title}</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Earned on {ach.dateEarned}</p>
+                                            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{ach.description}</p>
+                                        </div>
+                                    </FadeIn>
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-12 text-slate-500 dark:text-slate-400">
+                                    <Trophy size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                                    <p>No achievements yet. Keep participating to earn badges!</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

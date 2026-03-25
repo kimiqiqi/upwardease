@@ -5,7 +5,10 @@ export const INITIAL_VIDEOS: VideoType[] = [
     id: 1, 
     title: "How I organize my notes for Finals", 
     author: "Sarah J.", 
-    uploaderId: "user-sarah", 
+    submittedBy: "user-sarah", 
+    sourceType: "youtube",
+    youtubeVideoId: "dQw4w9WgXcQ", // Placeholder ID
+    originalUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     grade: "11th Grade", 
     views: 120, 
     category: "Study Tips", 
@@ -14,17 +17,22 @@ export const INITIAL_VIDEOS: VideoType[] = [
     likedBy: ["user-2"], 
     comments: [], 
     status: "approved", 
-    feedback: "", 
+    reviewNote: "", 
     description: "Here is my method for organizing notes using color codes.", 
-    uploadedAt: "2023-11-01T10:00:00Z", 
-    approvedAt: "2023-11-02T09:30:00Z",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+    createdAt: "2023-11-01T10:00:00Z", 
+    publishedAt: "2023-11-02T09:30:00Z",
+    reportCount: 0,
+    featured: true,
+    actionStep: "Try organizing your notes by color today!"
   },
   { 
     id: 2, 
     title: "Dealing with pre-exam anxiety", 
     author: "Marcus T.", 
-    uploaderId: "user-marcus", 
+    submittedBy: "user-marcus", 
+    sourceType: "youtube",
+    youtubeVideoId: "jNQXAC9IVRw", // Placeholder ID
+    originalUrl: "https://www.youtube.com/watch?v=jNQXAC9IVRw",
     grade: "College Freshman", 
     views: 85, 
     category: "Mental Health", 
@@ -33,17 +41,21 @@ export const INITIAL_VIDEOS: VideoType[] = [
     likedBy: ["user-1"], 
     comments: [], 
     status: "approved", 
-    feedback: "", 
+    reviewNote: "", 
     description: "Breathing exercises that help me before a big test.", 
-    uploadedAt: "2023-11-03T14:20:00Z", 
-    approvedAt: "2023-11-04T11:15:00Z",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+    createdAt: "2023-11-03T14:20:00Z", 
+    publishedAt: "2023-11-04T11:15:00Z",
+    reportCount: 0,
+    resourceLink: "https://www.nimh.nih.gov/health/topics/anxiety-disorders"
   },
   { 
     id: 3, 
     title: "Pomodoro technique explained", 
     author: "Emily R.", 
-    uploaderId: "user-emily", 
+    submittedBy: "user-emily", 
+    sourceType: "youtube",
+    youtubeVideoId: "mNBmG24djoY", // Placeholder ID
+    originalUrl: "https://www.youtube.com/watch?v=mNBmG24djoY",
     grade: "10th Grade", 
     views: 230, 
     category: "Productivity", 
@@ -52,17 +64,20 @@ export const INITIAL_VIDEOS: VideoType[] = [
     likedBy: [], 
     comments: [], 
     status: "approved", 
-    feedback: "", 
+    reviewNote: "", 
     description: "Stop procrastinating with this simple timer method.", 
-    uploadedAt: "2023-11-05T08:45:00Z", 
-    approvedAt: "2023-11-05T16:20:00Z",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
+    createdAt: "2023-11-05T08:45:00Z", 
+    publishedAt: "2023-11-05T16:20:00Z",
+    reportCount: 0
   },
   { 
     id: 4, 
     title: "My morning routine before school", 
     author: "Alex K.", 
-    uploaderId: "user-123", 
+    submittedBy: "user-123", 
+    sourceType: "youtube",
+    youtubeVideoId: "9bZkp7q19f0", // Placeholder ID
+    originalUrl: "https://www.youtube.com/watch?v=9bZkp7q19f0",
     grade: "12th Grade", 
     views: 95, 
     category: "Motivation", 
@@ -71,17 +86,20 @@ export const INITIAL_VIDEOS: VideoType[] = [
     likedBy: [], 
     comments: [], 
     status: "approved", 
-    feedback: "", 
+    reviewNote: "", 
     description: "Get ready with me! 6AM start.", 
-    uploadedAt: "2023-11-10T06:00:00Z", 
-    approvedAt: "2023-11-10T12:00:00Z",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
+    createdAt: "2023-11-10T06:00:00Z", 
+    publishedAt: "2023-11-10T12:00:00Z",
+    reportCount: 0
   },
   { 
     id: 5, 
     title: "Chemistry hacks that saved me", 
     author: "Jordan P.", 
-    uploaderId: "user-jordan", 
+    submittedBy: "user-jordan", 
+    sourceType: "youtube",
+    youtubeVideoId: "kJQP7kiw5Fk", // Placeholder ID
+    originalUrl: "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
     grade: "College Sophomore", 
     views: 310, 
     category: "Exam Prep", 
@@ -90,17 +108,20 @@ export const INITIAL_VIDEOS: VideoType[] = [
     likedBy: [], 
     comments: [], 
     status: "approved", 
-    feedback: "", 
+    reviewNote: "", 
     description: "Memorization tricks for the periodic table.", 
-    uploadedAt: "2023-11-12T15:30:00Z", 
-    approvedAt: "2023-11-13T09:00:00Z",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+    createdAt: "2023-11-12T15:30:00Z", 
+    publishedAt: "2023-11-13T09:00:00Z",
+    reportCount: 0
   },
   { 
     id: 6, 
     title: "It's okay to take a break", 
     author: "Lisa M.", 
-    uploaderId: "user-lisa", 
+    submittedBy: "user-lisa", 
+    sourceType: "youtube",
+    youtubeVideoId: "fJ9rUzIMcZQ", // Placeholder ID
+    originalUrl: "https://www.youtube.com/watch?v=fJ9rUzIMcZQ",
     grade: "8th Grade", 
     views: 150, 
     category: "Mental Health", 
@@ -109,16 +130,16 @@ export const INITIAL_VIDEOS: VideoType[] = [
     likedBy: [], 
     comments: [], 
     status: "approved", 
-    feedback: "", 
+    reviewNote: "", 
     description: "Reminding everyone that rest is productive too.", 
-    uploadedAt: "2023-11-15T11:10:00Z", 
-    approvedAt: "2023-11-15T13:45:00Z",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4"
+    createdAt: "2023-11-15T11:10:00Z", 
+    publishedAt: "2023-11-15T13:45:00Z",
+    reportCount: 0
   },
   // A pending video for demo purposes
-  { id: 7, title: "Why I almost quit", author: "New User", uploaderId: "user-new", grade: "9th Grade", views: 0, category: "Mental Health", color: "bg-red-100", likes: 0, likedBy: [], comments: [], status: "pending", feedback: "", description: "Sharing my story of burnout.", uploadedAt: "2023-11-20T09:00:00Z", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4" },
+  { id: 7, title: "Why I almost quit", author: "New User", submittedBy: "user-new", sourceType: "youtube", youtubeVideoId: "V-_O7nl0Ii0", originalUrl: "https://www.youtube.com/watch?v=V-_O7nl0Ii0", grade: "9th Grade", views: 0, category: "Mental Health", color: "bg-red-100", likes: 0, likedBy: [], comments: [], status: "pending", reviewNote: "", description: "Sharing my story of burnout.", createdAt: "2023-11-20T09:00:00Z", reportCount: 0 },
   // A rejected video for demo purposes (owned by current user user-123)
-  { id: 8, title: "Rant about my teacher", author: "Alex K.", uploaderId: "user-123", grade: "12th Grade", views: 0, category: "Mental Health", color: "bg-gray-100", likes: 0, likedBy: [], comments: [], status: "rejected", feedback: "Content violates community guidelines: Specifically targeting individuals is not allowed.", description: "Just need to vent about Mr. Smith.", uploadedAt: "2023-11-18T16:50:00Z", videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" },
+  { id: 8, title: "Rant about my teacher", author: "Alex K.", submittedBy: "user-123", sourceType: "youtube", youtubeVideoId: "L_jWHffIx5E", originalUrl: "https://www.youtube.com/watch?v=L_jWHffIx5E", grade: "12th Grade", views: 0, category: "Mental Health", color: "bg-gray-100", likes: 0, likedBy: [], comments: [], status: "rejected", reviewNote: "Content violates community guidelines: Specifically targeting individuals is not allowed.", description: "Just need to vent about Mr. Smith.", createdAt: "2023-11-18T16:50:00Z", reportCount: 0 },
 ];
 
 export const REVIEWS = [
@@ -148,7 +169,7 @@ export const REVIEWS = [
   },
   {
     id: 4,
-    text: "The weekly featured topics really help me focus on specific areas of my mental health. Hearing how others balance their social life and academics gave me a completely new perspective.",
+    text: "The monthly featured topics really help me focus on specific areas of my mental health. Hearing how others balance their social life and academics gave me a completely new perspective.",
     author: "David",
     role: "High School Senior",
     color: "bg-green-100",
