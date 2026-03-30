@@ -32,12 +32,14 @@ export const MissionSection = ({ navigate }: { navigate?: (tab: any) => void }) 
                We are a nonprofit on a mission to create a safe digital environment where students can vent about academic pressure and share strategies for success. 
                We bridge the gap between stress and support so that all students have an equal opportunity to achieve mental well-being and academic upward mobility.
             </p>
-            <button 
-               onClick={() => navigate && navigate("about")}
-               className="text-eggplant dark:text-teal-400 font-bold border-b-2 border-eggplant dark:border-teal-400 hover:opacity-80 transition-opacity uppercase text-sm tracking-wider pb-1"
-            >
-               Explore Our Mission
-            </button>
+            {navigate && (
+              <button 
+                onClick={() => navigate("about")}
+                className="bg-eggplant text-white px-6 py-3 rounded-full font-bold text-sm hover:bg-eggplant-dark transition-all flex items-center gap-2 group shadow-md hover:shadow-lg"
+              >
+                Explore Our Mission <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+              </button>
+            )}
          </div>
       </div>
     </section>

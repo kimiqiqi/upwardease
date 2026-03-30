@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { User, AlertCircle, Loader2, Youtube, X, CheckCircle2 } from "lucide-react";
 import { UserType, VideoType, TabType } from "../types";
 import { SpotlightButton } from "../components/SpotlightButton";
@@ -18,6 +18,14 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
   const [uploading, setUploading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [urlError, setUrlError] = useState("");
+  const [formError, setFormError] = useState("");
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+      return () => {
+          isMounted.current = false;
+      };
+  }, []);
 
   const suggestions = [
       "time management", "stress", "college prep", 
@@ -72,31 +80,32 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
     if (!user) return;
     
     if (!youtubeVideoId) {
-        alert("Please provide a valid YouTube link first.");
+        setFormError("Please provide a valid YouTube link first.");
         return;
     }
 
     if (!title.trim() || !description.trim()) {
-        alert("Please provide a title and description.");
+        setFormError("Please provide a title and description.");
         return;
     }
 
     if (tags.length === 0) {
-        alert("Please add at least one tag.");
+        setFormError("Please add at least one tag.");
         return;
     }
     if (!agreedToTerms) {
-        alert("Please agree to the community guidelines.");
+        setFormError("Please agree to the community guidelines.");
         return;
     }
 
     // Check for duplicate submission
     const isDuplicate = videos.some(v => v.youtubeVideoId === youtubeVideoId);
     if (isDuplicate) {
-        alert("This video has already been submitted to UpwardEase.");
+        setFormError("This video has already been submitted to UpwardEase.");
         return;
     }
 
@@ -105,6 +114,8 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
     // Simulate submission delay for youtube
     await new Promise(resolve => setTimeout(resolve, 1500));
     
+    if (!isMounted.current) return;
+
     const colors = ["bg-accent-orange", "bg-accent-green", "bg-eggplant", "bg-blue-500", "bg-purple-500", "bg-pink-500"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
@@ -172,6 +183,13 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
             <AlertCircle size={20} className="shrink-0" />
             <p>All submissions are reviewed by our volunteer admins before appearing publicly.</p>
         </div>
+
+        {formError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-xl mb-6 text-sm text-red-800 dark:text-red-200 flex gap-2">
+                <AlertCircle size={20} className="shrink-0" />
+                <p>{formError}</p>
+            </div>
+        )}
         
         <form onSubmit={handleUpload} className="space-y-6">
           

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ArrowLeft, PlayCircle, Star, Heart, Send, User, Share2, ThumbsUp, Flag, AlertTriangle, X, CheckCircle2, HelpCircle, ShieldAlert, Lightbulb, Link as LinkIcon, Facebook, Twitter, Lock, FileText, Sparkles } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { ArrowLeft, PlayCircle, Star, Heart, Send, User, Share2, ThumbsUp, Flag, AlertTriangle, X, CheckCircle2, HelpCircle, ShieldAlert, Lightbulb, Link as LinkIcon, Facebook, Twitter, Lock, FileText, Sparkles, Trash2 } from "lucide-react";
 import { VideoType, UserType, CommentType, ReportType, ModerationLogType, TabType } from "../types";
 import { FadeIn } from "../components/FadeIn";
 import { getYouTubeEmbedUrl } from "../utils/youtube";
@@ -44,6 +44,15 @@ export const VideoDetailView = ({
   const [adminAction, setAdminAction] = useState<'approve' | 'reject' | 'escalate' | null>(null);
   const [internalNote, setInternalNote] = useState(video.adminNotes || "");
   const [rejectionFeedback, setRejectionFeedback] = useState("");
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+      return () => {
+          isMounted.current = false;
+      };
+  }, []);
 
   const MAX_COMMENT_LENGTH = 500;
   
@@ -232,7 +241,12 @@ export const VideoDetailView = ({
 
       setIsReporting(false);
       setReportReason("");
-      alert("Video has been reported for review. Thank you for helping keep our community safe.");
+      setToastMessage("Video has been reported for review. Thank you for helping keep our community safe.");
+      setTimeout(() => {
+          if (isMounted.current) {
+              setToastMessage("");
+          }
+      }, 3000);
   };
   
   const handleAdminVerdict = (status: 'approved' | 'rejected' | 'removed') => {
@@ -263,8 +277,13 @@ export const VideoDetailView = ({
           }
       }
       
-      // Navigate back to admin dashboard after decision
-      navigate('admin');
+      setToastMessage(`Video ${status} successfully.`);
+      setTimeout(() => {
+          if (isMounted.current) {
+              setToastMessage("");
+          }
+          navigate('admin');
+      }, 1500);
   };
 
   const handleUpdateNotes = () => {
@@ -292,9 +311,13 @@ export const VideoDetailView = ({
           setModerationLogs((prev: ModerationLogType[]) => [newLog, ...prev]);
       }
       
-      alert("Video escalated for review.");
-      // Navigate back to admin dashboard after decision
-      navigate('admin');
+      setToastMessage("Video escalated for review.");
+      setTimeout(() => {
+          if (isMounted.current) {
+              setToastMessage("");
+          }
+          navigate('admin');
+      }, 1500);
   };
 
   const handlePostComment = (e: React.FormEvent) => {
@@ -347,6 +370,47 @@ export const VideoDetailView = ({
 
   return (
     <div className="max-w-5xl mx-auto relative pb-12">
+       {/* Toast Message */}
+       {toastMessage && (
+           <div className="fixed bottom-4 right-4 z-[200] bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl animate-in slide-in-from-bottom-5 fade-in font-bold flex items-center gap-3">
+               <CheckCircle2 className="text-green-400" size={20} />
+               {toastMessage}
+           </div>
+       )}
+
+       {/* Remove Confirm Modal */}
+       {showRemoveConfirm && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+               <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95">
+                   <div className="flex justify-between items-center mb-4 text-red-600 dark:text-red-400">
+                       <h3 className="text-xl font-serif font-bold flex items-center gap-2">
+                           <AlertTriangle size={24} /> Remove Video
+                       </h3>
+                   </div>
+                   <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm">
+                       Are you sure you want to remove this video? It will be hidden from the gallery but kept in history.
+                   </p>
+                   <div className="flex gap-3">
+                       <button 
+                           onClick={() => setShowRemoveConfirm(false)}
+                           className="flex-1 px-4 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                       >
+                           Cancel
+                       </button>
+                       <button 
+                           onClick={() => {
+                               setShowRemoveConfirm(false);
+                               handleAdminVerdict('removed');
+                           }}
+                           className="flex-1 px-4 py-3 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 transition-colors"
+                       >
+                           Remove
+                       </button>
+                   </div>
+               </div>
+           </div>
+       )}
+
        {/* Share Modal */}
        {showShareModal && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowShareModal(false)}>
@@ -664,15 +728,11 @@ export const VideoDetailView = ({
                        {isAdmin && (
                            <>
                                <button 
-                                   onClick={() => {
-                                       if (window.confirm("Are you sure you want to remove this video? It will be hidden from the gallery but kept in history.")) {
-                                           handleAdminVerdict('removed');
-                                       }
-                                   }}
+                                   onClick={() => setShowRemoveConfirm(true)}
                                    className="p-2.5 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                                    title="Remove Video"
                                >
-                                   <X size={20} />
+                                   <Trash2 size={20} />
                                </button>
                                <button 
                                    onClick={handleUpdateNotes}

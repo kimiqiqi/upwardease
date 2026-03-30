@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Mail, Phone, AlertTriangle, HeartHandshake, ShieldAlert, Send, CheckCircle2 } from "lucide-react";
 import { FadeIn } from "../components/FadeIn";
 import { UserType, ContactMessageType } from "../types";
@@ -16,6 +16,13 @@ export const ContactView = ({
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+      return () => {
+          isMounted.current = false;
+      };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +32,8 @@ export const ContactView = ({
     
     // Simulate API call
     setTimeout(() => {
+      if (!isMounted.current) return;
+      
       const newMessage: ContactMessageType = {
         id: `msg-${Date.now()}`,
         name,
@@ -45,7 +54,11 @@ export const ContactView = ({
       setMessage("");
       
       // Reset success message after 3 seconds
-      setTimeout(() => setIsSuccess(false), 3000);
+      setTimeout(() => {
+          if (isMounted.current) {
+              setIsSuccess(false);
+          }
+      }, 3000);
     }, 800);
   };
 

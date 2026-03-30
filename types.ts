@@ -1,4 +1,4 @@
-export type TabType = "home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail" | "profile" | "about" | "terms";
+export type TabType = "home" | "upload" | "gallery" | "contact" | "admin" | "login" | "video-detail" | "profile" | "terms" | "about";
 
 export type FeaturedTopic = {
   id: string;

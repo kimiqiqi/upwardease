@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Plus, AlertCircle, PlayCircle, RotateCcw, Send, GraduationCap, School, MapPin, Settings, X, Save, User, ArrowDown, Loader2, Quote, Bell, Mail, Lock, Trophy, ShieldAlert, CheckCircle2, Phone, Calendar } from "lucide-react";
 import { UserType, VideoType, AdminRequestType, TabType } from "../types";
 import { FadeIn } from "../components/FadeIn";
@@ -146,6 +146,13 @@ export const ProfileView = ({
     // Admin Application State
     const [adminMessage, setAdminMessage] = useState("");
     const [isApplyingForAdmin, setIsApplyingForAdmin] = useState(false);
+    const isMounted = useRef(true);
+
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
     if (!user) return null;
 
@@ -267,9 +274,13 @@ export const ProfileView = ({
             // Simulate data refresh delay
             await new Promise(resolve => setTimeout(resolve, 1500));
             
-            setIsRefreshing(false);
+            if (isMounted.current) {
+                setIsRefreshing(false);
+            }
         }
-        setPullY(0);
+        if (isMounted.current) {
+            setPullY(0);
+        }
         touchStartY.current = 0;
     };
 

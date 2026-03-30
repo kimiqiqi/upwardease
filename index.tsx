@@ -5,6 +5,7 @@ import { UserType, VideoType, AdminRequestType, ReportType, ModerationLogType, C
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
 import { HomeView } from "./views/HomeView";
+import { AboutView } from "./views/AboutView";
 import { UploadView } from "./views/UploadView";
 import { GalleryView } from "./views/GalleryView";
 import { VideoDetailView } from "./views/VideoDetailView";
@@ -12,7 +13,6 @@ import { ProfileView } from "./views/ProfileView";
 import { ContactView } from "./views/ContactView";
 import { AdminView } from "./views/AdminView";
 import { LoginView } from "./views/LoginView";
-import { AboutView } from "./views/AboutView";
 import { TermsView } from "./views/TermsView";
 import { authService } from "./authService";
 
@@ -323,8 +323,8 @@ const App = () => {
       case "admin": return <AdminView user={user} navigate={handleNavigate} videos={videos} setVideos={setVideos} onVideoClick={handleVideoClick} adminRequests={adminRequests} setAdminRequests={setAdminRequests} users={users} setUsers={setUsers} setUser={setUser} reports={reports} setReports={setReports} moderationLogs={moderationLogs} setModerationLogs={setModerationLogs} contactMessages={contactMessages} setContactMessages={setContactMessages} addNotification={addNotification} />;
       case "profile": return <ProfileView user={user} setUser={setUser} videos={videos} setVideos={setVideos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={handleNavigate} adminRequests={adminRequests} setAdminRequests={setAdminRequests} />;
       case "login": return <LoginView onAuthSubmit={handleAuthSubmit} navigate={handleNavigate} />;
-      case "about": return <AboutView />;
       case "terms": return <TermsView navigate={handleNavigate} previousTab={previousTab} />;
+      case "about": return <AboutView />;
       default: return <HomeView navigate={handleNavigate} />;
     }
   };

@@ -14,9 +14,14 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
   const NavItem = ({ id, label }: { id: TabType, label: string }) => (
     <button 
       onClick={() => { setActiveTab(id); setMobileMenuOpen(false); }}
-      className={`text-sm font-bold transition-colors ${activeTab === id ? "text-eggplant border-b-2 border-eggplant dark:text-teal-300 dark:border-teal-300" : "text-slate-500 hover:text-eggplant dark:text-slate-400 dark:hover:text-white"}`}
+      className={`text-sm font-bold transition-all duration-200 relative py-1 group ${
+        activeTab === id 
+          ? "text-eggplant dark:text-teal-300" 
+          : "text-slate-500 hover:text-eggplant dark:text-slate-400 dark:hover:text-white"
+      }`}
     >
       {label}
+      <span className={`absolute bottom-0 left-0 h-0.5 bg-current transition-all duration-300 ${activeTab === id ? "w-full" : "w-0 group-hover:w-full opacity-50"}`}></span>
     </button>
   );
 

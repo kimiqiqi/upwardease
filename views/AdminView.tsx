@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp, Calendar, Edit3, MessageCircle, Flag, UserPlus, Users, Inbox, MailOpen, Mail, RotateCcw } from "lucide-react";
 import { UserType, VideoType, AdminRequestType, ReportType, ModerationLogType, ContactMessageType, VideoStatus } from "../types";
 import { FadeIn } from "../components/FadeIn";
@@ -46,6 +46,24 @@ export const AdminView = ({
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
   const [reviewAction, setReviewAction] = useState<'reject' | 'escalate' | 'update_note' | null>(null);
   const [adminTab, setAdminTab] = useState<'queue' | 'escalated' | 'history' | 'requests' | 'users' | 'reports' | 'inbox'>('queue');
+  const [confirmRemoveVideo, setConfirmRemoveVideo] = useState<number | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+      return () => {
+          isMounted.current = false;
+      };
+  }, []);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+        if (isMounted.current) {
+            setToastMessage(null);
+        }
+    }, 3000);
+  };
   
   // History State
   const [historySearch, setHistorySearch] = useState("");
@@ -113,6 +131,8 @@ export const AdminView = ({
       setEscalationNote("");
       setSelectedReviewId(null);
       setReviewAction(null);
+      
+      showToast(`Video ${status} successfully.`);
   };
 
   const handleUpdateNotes = (id: number) => {
@@ -147,6 +167,8 @@ export const AdminView = ({
       setEscalationNote("");
       setSelectedReviewId(null);
       setReviewAction(null);
+      
+      showToast(reviewAction === 'update_note' ? "Admin note updated." : "Video escalated for review.");
   };
 
 
@@ -202,6 +224,7 @@ export const AdminView = ({
       setModerationLogs([newLog, ...moderationLogs]);
 
       setConfirmRequestAction(null);
+      showToast(`Admin request ${status}.`);
   };
   
   const historyVideos = videos.filter(v => {
@@ -703,6 +726,7 @@ export const AdminView = ({
                                                             const newRole = e.target.value as 'user' | 'admin' | 'superadmin';
                                                             const updatedUsers = users.map(userItem => userItem.id === u.id ? { ...userItem, role: newRole } : userItem);
                                                             setUsers(updatedUsers);
+                                                            showToast(`User role updated to ${newRole}.`);
                                                         }}
                                                         className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-eggplant dark:text-white"
                                                     >
@@ -857,6 +881,7 @@ export const AdminView = ({
                                                         const updatedReports = reports.map(r => r.submissionId === report.submissionId ? { ...r, status: 'dismissed', handledBy: user.id, handledAt: new Date().toISOString() } : r);
                                                         setReports(updatedReports as ReportType[]);
                                                         setModerationLogs(currentLogs);
+                                                        showToast("All reports dismissed.");
                                                     }}
                                                     className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 py-2 rounded-lg font-bold hover:bg-slate-50 dark:hover:bg-slate-700 text-sm transition-colors"
                                                 >
@@ -865,7 +890,7 @@ export const AdminView = ({
                                                 <button 
                                                     onClick={() => {
                                                         if (reportedVideo) {
-                                                            handleVerdict(reportedVideo.id, 'removed');
+                                                            setConfirmRemoveVideo(reportedVideo.id);
                                                         }
                                                     }}
                                                     className="flex-1 bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 text-sm transition-colors"
@@ -889,6 +914,39 @@ export const AdminView = ({
             )}
           </div>
        </div>
+
+       {/* Remove Video Confirmation Modal */}
+       {confirmRemoveVideo && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+               <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95">
+                   <div className="flex justify-between items-center mb-4 text-red-600 dark:text-red-400">
+                       <h3 className="text-xl font-serif font-bold flex items-center gap-2">
+                           <AlertTriangle size={24} /> Remove Video
+                       </h3>
+                   </div>
+                   <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm">
+                       Are you sure you want to remove this video? It will be hidden from the gallery but kept in history.
+                   </p>
+                   <div className="flex gap-3">
+                       <button 
+                           onClick={() => setConfirmRemoveVideo(null)}
+                           className="flex-1 px-4 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                       >
+                           Cancel
+                       </button>
+                       <button 
+                           onClick={() => {
+                               handleVerdict(confirmRemoveVideo, 'removed');
+                               setConfirmRemoveVideo(null);
+                           }}
+                           className="flex-1 px-4 py-3 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 transition-colors"
+                       >
+                           Remove
+                       </button>
+                   </div>
+               </div>
+           </div>
+       )}
 
        {/* Admin Request Confirmation Modal */}
        {confirmRequestAction && (
@@ -920,6 +978,16 @@ export const AdminView = ({
                            Confirm
                        </button>
                    </div>
+               </div>
+           </div>
+       )}
+
+       {/* Toast Notification */}
+       {toastMessage && (
+           <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-bottom-5 fade-in duration-300">
+               <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-bold">
+                   <CheckCircle2 size={20} className="text-green-400 dark:text-green-600" />
+                   {toastMessage}
                </div>
            </div>
        )}
