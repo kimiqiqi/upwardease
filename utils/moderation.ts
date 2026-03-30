@@ -1,6 +1,6 @@
 import { VideoType, ModerationLogType, UserType } from "../types";
 
-export const dismissReportForVideo = (
+export const dismissAllReportsForVideo = (
     video: VideoType,
     user: UserType
 ): { updatedVideo: VideoType, logEntry: ModerationLogType } => {
@@ -9,14 +9,13 @@ export const dismissReportForVideo = (
     const updatedVideo: VideoType = {
         ...video,
         reportReason: undefined,
-        reportCount: 0,
-        isEscalated: false
+        reportCount: 0
     };
 
     const logEntry: ModerationLogType = {
         id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         actorId: user.id,
-        action: 'dismiss_report',
+        action: 'dismiss_all_reports',
         targetType: 'video',
         targetId: video.id,
         timestamp: now

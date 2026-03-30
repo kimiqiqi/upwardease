@@ -140,6 +140,8 @@ export const INITIAL_VIDEOS: VideoType[] = [
   { id: 7, title: "Why I almost quit", author: "New User", submittedBy: "user-new", sourceType: "youtube", youtubeVideoId: "V-_O7nl0Ii0", originalUrl: "https://www.youtube.com/watch?v=V-_O7nl0Ii0", grade: "9th Grade", views: 0, category: "Mental Health", color: "bg-red-100", likes: 0, likedBy: [], comments: [], status: "pending", reviewNote: "", description: "Sharing my story of burnout.", createdAt: "2023-11-20T09:00:00Z", reportCount: 0 },
   // A rejected video for demo purposes (owned by current user user-123)
   { id: 8, title: "Rant about my teacher", author: "Alex K.", submittedBy: "user-123", sourceType: "youtube", youtubeVideoId: "L_jWHffIx5E", originalUrl: "https://www.youtube.com/watch?v=L_jWHffIx5E", grade: "12th Grade", views: 0, category: "Mental Health", color: "bg-gray-100", likes: 0, likedBy: [], comments: [], status: "rejected", reviewNote: "Content violates community guidelines: Specifically targeting individuals is not allowed.", description: "Just need to vent about Mr. Smith.", createdAt: "2023-11-18T16:50:00Z", reportCount: 0 },
+  // A reported video for demo purposes (needs review)
+  { id: 9, title: "Questionable study advice", author: "Sam D.", submittedBy: "user-sam", sourceType: "youtube", youtubeVideoId: "dQw4w9WgXcQ", originalUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", grade: "College Junior", views: 45, category: "Study Tips", color: "bg-orange-100", likes: 5, likedBy: [], comments: [], status: "approved", reviewNote: "", description: "Is this actually good advice?", createdAt: "2023-11-19T10:00:00Z", publishedAt: "2023-11-19T11:00:00Z", reportCount: 1, reportReason: "Promotes unhealthy study habits" },
 ];
 
 export const REVIEWS = [

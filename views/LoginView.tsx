@@ -29,6 +29,7 @@ export const LoginView = ({ onAuthSubmit, navigate }: { onAuthSubmit: (payload: 
   const validate = () => {
     setError(null);
     if (!identifier) return "Email or Phone is required.";
+    if (!password) return "Password is required.";
     if (isRegistering) {
        if (!agreedToTerms) return "You must agree to the Terms of Service.";
        if (!name) return "Name is required.";
@@ -39,9 +40,6 @@ export const LoginView = ({ onAuthSubmit, navigate }: { onAuthSubmit: (payload: 
        }
        if (password !== confirmPassword) {
          return "Passwords do not match.";
-       }
-       if (!agreedToTerms) {
-         return "You must agree to the Terms of Service to create an account.";
        }
     }
     return null;

@@ -53,7 +53,12 @@ export const ContactView = ({
     <div className="max-w-3xl mx-auto py-12">
        <FadeIn direction="down" className="text-center mb-12">
           <h2 className="text-4xl font-serif font-bold text-slate-900 dark:text-white mb-4">Get in Touch & Support</h2>
-          <p className="text-slate-600 dark:text-slate-300">We're here to help, but please remember we are a peer-sharing platform, not a medical service.</p>
+          <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              Have a question about the platform? Want to partner with us? Reach out using the options below. 
+              <br/><br/>
+              <strong>Note:</strong> The form below sends an internal message to the UpwardEase admin team. It does not send a real external email. 
+              If you need to report a specific video for violating guidelines, please use the "Report" button directly on that video's page.
+          </p>
        </FadeIn>
 
        <div className="grid md:grid-cols-2 gap-6 mb-12">
@@ -64,7 +69,7 @@ export const ContactView = ({
                 </div>
                 <div>
                     <h3 className="font-bold text-2xl text-slate-900 dark:text-white mb-2">Email Us Directly</h3>
-                    <p className="text-slate-500 dark:text-slate-400 mb-4">For general inquiries, feedback, and platform support, you can email us anytime.</p>
+                    <p className="text-slate-500 dark:text-slate-400 mb-4">For general inquiries, feedback, and platform support, you can send a real email to us anytime.</p>
                     <a href="mailto:upwardease.contact@gmail.com" className="text-eggplant dark:text-teal-400 font-bold hover:underline text-lg">upwardease.contact@gmail.com</a>
                 </div>
             </div>
@@ -72,7 +77,8 @@ export const ContactView = ({
 
           <FadeIn delay={150}>
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-6">Send a Message</h3>
+                <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-2">Send an Internal Message</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">This form sends a message directly to our admin dashboard.</p>
                 
                 {isSuccess ? (
                     <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6 text-center h-full flex flex-col items-center justify-center min-h-[250px]">

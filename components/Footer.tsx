@@ -27,13 +27,13 @@ export const Footer = ({ navigate, darkMode }: { navigate: (tab: TabType) => voi
          <p className="font-serif text-lg text-eggplant dark:text-white">{greeting}!</p>
          <ArrowDown className="text-accent-orange animate-bounce" />
       </div>
-      <div className="flex justify-center gap-6 text-sm font-bold mb-4">
-          <button onClick={() => navigate("home")} className="hover:text-eggplant dark:hover:text-white">Who We Are</button>
-          <button onClick={() => navigate("about")} className="hover:text-eggplant dark:hover:text-white">Our Mission</button>
-          <a href="https://donate.stripe.com/test" target="_blank" rel="noopener noreferrer" className="text-accent-orange hover:text-orange-600">Donate</a>
-          <button onClick={() => navigate("terms")} className="hover:text-eggplant dark:hover:text-white">Terms of Service</button>
-          <button onClick={() => navigate("gallery")} className="hover:text-eggplant dark:hover:text-white">Gallery</button>
-          <button onClick={() => navigate("contact")} className="hover:text-eggplant dark:hover:text-white">Contact Us</button>
+      <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm font-bold mb-4 px-4">
+          <button onClick={() => navigate("home")} className="hover:text-eggplant dark:hover:text-white transition-colors">Who We Are</button>
+          <button onClick={() => navigate("about")} className="hover:text-eggplant dark:hover:text-white transition-colors">Our Mission</button>
+          <a href="https://donate.stripe.com/test" target="_blank" rel="noopener noreferrer" className="text-accent-orange hover:text-orange-600 transition-colors">Donate</a>
+          <button onClick={() => navigate("terms")} className="hover:text-eggplant dark:hover:text-white transition-colors">Terms of Service</button>
+          <button onClick={() => navigate("gallery")} className="hover:text-eggplant dark:hover:text-white transition-colors">Gallery</button>
+          <button onClick={() => navigate("contact")} className="hover:text-eggplant dark:hover:text-white transition-colors">Contact Us</button>
       </div>
       <p className="text-xs opacity-60">© UpwardEase {new Date().getFullYear()}. All rights reserved.</p>
     </footer>

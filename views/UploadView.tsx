@@ -30,7 +30,12 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
       const id = extractYouTubeId(youtubeUrl);
       if (id) {
         setYoutubeVideoId(id);
-        setUrlError("");
+        const isDuplicate = videos.some(v => v.youtubeVideoId === id);
+        if (isDuplicate) {
+          setUrlError("This video has already been submitted to UpwardEase.");
+        } else {
+          setUrlError("");
+        }
       } else {
         setYoutubeVideoId(null);
         setUrlError("Invalid YouTube URL. Please check the link and try again.");
@@ -39,12 +44,12 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
       setYoutubeVideoId(null);
       setUrlError("");
     }
-  }, [youtubeUrl]);
+  }, [youtubeUrl, videos]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
           e.preventDefault();
-          const trimmed = tagInput.trim();
+          const trimmed = tagInput.trim().toLowerCase();
           if (trimmed && !tags.includes(trimmed)) {
               setTags([...tags, trimmed]);
               setTagInput("");
@@ -55,8 +60,9 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
   };
 
   const addTag = (tag: string) => {
-      if (!tags.includes(tag)) {
-          setTags([...tags, tag]);
+      const normalizedTag = tag.toLowerCase();
+      if (!tags.includes(normalizedTag)) {
+          setTags([...tags, normalizedTag]);
       }
   };
 
@@ -70,6 +76,11 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
     
     if (!youtubeVideoId) {
         alert("Please provide a valid YouTube link first.");
+        return;
+    }
+
+    if (!title.trim() || !description.trim()) {
+        alert("Please provide a title and description.");
         return;
     }
 
@@ -100,8 +111,8 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
     // Add new pending video with user profile data
     const newVideo: VideoType = {
       id: Date.now(),
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       author: user.name,
       submittedBy: user.id,
       sourceType: 'youtube',
@@ -123,6 +134,7 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
       resourceLink: resourceLink.trim() || undefined,
     };
     
+    // TODO: Replace with API call to POST /api/videos
     setVideos((prev: VideoType[]) => [...prev, newVideo]);
     setUploading(false);
     navigate("profile"); // Redirect to profile to see pending status
@@ -147,7 +159,8 @@ export const UploadView = ({ user, navigate, videos, setVideos }: { user: UserTy
     );
   }
 
-  const isSubmitDisabled = uploading || !youtubeVideoId || !agreedToTerms;
+  const isDuplicate = youtubeVideoId ? videos.some(v => v.youtubeVideoId === youtubeVideoId) : false;
+  const isSubmitDisabled = uploading || !youtubeVideoId || !agreedToTerms || tags.length === 0 || isDuplicate || !title.trim() || !description.trim();
 
   return (
     <div className="max-w-2xl mx-auto py-8">

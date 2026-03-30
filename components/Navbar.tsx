@@ -44,7 +44,6 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             <NavItem id="home" label="Who We Are" />
-            <NavItem id="about" label="Our Mission" />
             
             {/* Gallery: Visible to all */}
             <NavItem id="gallery" label="Gallery" />
@@ -152,7 +151,6 @@ export const Navbar = ({ activeTab, setActiveTab, user, onLogout, darkMode, setD
         <div className={`md:hidden p-4 border-t ${darkMode ? "bg-slate-900 border-slate-700" : "bg-cream border-slate-200"}`}>
           <div className="flex flex-col space-y-4">
             <NavItem id="home" label="Who We Are" />
-            <NavItem id="about" label="Our Mission" />
             
             <NavItem id="gallery" label="Gallery" />
             

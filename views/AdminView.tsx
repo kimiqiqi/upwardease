@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp, Calendar, Edit3, MessageCircle, Flag, UserPlus, Users, Inbox, MailOpen, Mail } from "lucide-react";
+import { ShieldAlert, Clock, CheckCircle2, Video, X, HelpCircle, History, Search, AlertTriangle, ChevronDown, ChevronUp, Calendar, Edit3, MessageCircle, Flag, UserPlus, Users, Inbox, MailOpen, Mail, RotateCcw } from "lucide-react";
 import { UserType, VideoType, AdminRequestType, ReportType, ModerationLogType, ContactMessageType, VideoStatus } from "../types";
 import { FadeIn } from "../components/FadeIn";
-import { applyModerationVerdict, dismissReportForVideo } from "../utils/moderation";
+import { applyModerationVerdict, dismissAllReportsForVideo } from "../utils/moderation";
 
 export const AdminView = ({ 
   user, 
@@ -20,7 +20,8 @@ export const AdminView = ({
   moderationLogs,
   setModerationLogs,
   contactMessages,
-  setContactMessages
+  setContactMessages,
+  addNotification
 }: { 
   user: UserType, 
   navigate: any, 
@@ -37,7 +38,8 @@ export const AdminView = ({
   moderationLogs: ModerationLogType[],
   setModerationLogs: (logs: ModerationLogType[]) => void,
   contactMessages: ContactMessageType[],
-  setContactMessages: React.Dispatch<React.SetStateAction<ContactMessageType[]>>
+  setContactMessages: React.Dispatch<React.SetStateAction<ContactMessageType[]>>,
+  addNotification: (targetUserId: string, message: string, type: 'like' | 'comment' | 'save' | 'system', linkId?: number) => void
 }) => {
   const [rejectReason, setRejectReason] = useState("");
   const [escalationNote, setEscalationNote] = useState("");
@@ -82,8 +84,29 @@ export const AdminView = ({
           undefined // Clear adminNotes on final verdict
       );
 
+      // TODO: Replace with API call to POST /api/moderation/verdict
       setVideos((prev: VideoType[]) => prev.map(v => v.id === id ? updatedVideo : v));
       setModerationLogs([logEntry, ...moderationLogs]);
+
+      // Resolve any open reports for this video
+      const openReports = reports.filter(r => r.submissionId === id && r.status === 'open');
+      if (openReports.length > 0) {
+          const updatedReports = reports.map(r => 
+              r.submissionId === id && r.status === 'open' 
+              ? { ...r, status: 'resolved' as const, actionTaken: `Video ${status}`, handledBy: user.id, handledAt: new Date().toISOString() } 
+              : r
+          );
+          setReports(updatedReports);
+      }
+
+      // Notify the user about the verdict
+      if (status === 'approved') {
+          addNotification(video.submittedBy, `Your video "${video.title}" has been approved and is now live!`, 'system', video.id);
+      } else if (status === 'rejected') {
+          addNotification(video.submittedBy, `Your video "${video.title}" was rejected. Reason: ${rejectReason || 'Violation of guidelines'}`, 'system', video.id);
+      } else if (status === 'removed') {
+          addNotification(video.submittedBy, `Your video "${video.title}" has been removed from the platform.`, 'system', video.id);
+      }
 
       // Reset states
       setRejectReason("");
@@ -93,11 +116,12 @@ export const AdminView = ({
   };
 
   const handleUpdateNotes = (id: number) => {
+      const noteToSave = escalationNote.trim() ? escalationNote.trim() : 'Escalated from Admin Queue';
       setVideos((prev: VideoType[]) => prev.map(v => 
           v.id === id 
           ? { 
               ...v, 
-              adminNotes: escalationNote,
+              adminNotes: noteToSave,
               isEscalated: true
             } 
           : v
@@ -106,14 +130,16 @@ export const AdminView = ({
       const newLog: ModerationLogType = {
           id: `log-${Date.now()}`,
           actorId: user.id,
-          action: 'update_note',
+          action: 'escalate',
           targetType: 'video',
           targetId: id,
           timestamp: new Date().toISOString(),
           metadata: {
-              reason: escalationNote
+              reason: noteToSave
           }
       };
+
+      // TODO: Replace with API call to POST /api/moderation/escalate
       setModerationLogs([newLog, ...moderationLogs]);
 
       // Reset states
@@ -160,6 +186,9 @@ export const AdminView = ({
               u.id === request.userId ? { ...u, role: 'admin' as const } : u
           );
           setUsers(updatedUsers);
+          addNotification(request.userId, `Congratulations! Your request to become an Admin has been approved.`, 'system');
+      } else {
+          addNotification(request.userId, `Your request to become an Admin was declined.`, 'system');
       }
       
       const newLog: ModerationLogType = {
@@ -185,7 +214,8 @@ export const AdminView = ({
       if (historySearch) {
           const lower = historySearch.toLowerCase();
           return v.title.toLowerCase().includes(lower) || 
-                 v.author.toLowerCase().includes(lower);
+                 v.author.toLowerCase().includes(lower) ||
+                 (v.tags && v.tags.some(t => t.toLowerCase().includes(lower)));
       }
       return true;
   }).sort((a, b) => {
@@ -289,9 +319,9 @@ export const AdminView = ({
                     )}
                 </div>
 
-                {video.status === 'rejected' && video.reviewNote && (
-                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg text-sm text-red-800 dark:text-red-300">
-                        <span className="font-bold block mb-1">Rejection Reason:</span>
+                {(video.status === 'rejected' || video.status === 'removed') && video.reviewNote && (
+                    <div className={`p-3 rounded-lg text-sm border ${video.status === 'removed' ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-300' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/30 text-red-800 dark:text-red-300'}`}>
+                        <span className="font-bold block mb-1">{video.status === 'removed' ? 'Removal Reason:' : 'Rejection Reason:'}</span>
                         {video.reviewNote}
                     </div>
                 )}
@@ -301,25 +331,37 @@ export const AdminView = ({
                         {video.adminNotes}
                     </div>
                 )}
+                <div className="pt-2">
+                    <button 
+                        onClick={() => onVideoClick(video.id)}
+                        className="text-eggplant dark:text-teal-400 font-bold hover:underline text-sm flex items-center gap-1"
+                    >
+                        <Video size={14} /> View Video Details
+                    </button>
+                </div>
              </div>
           )}
 
           {/* Interactive Action Area */}
           {isInteractive && (
              <>
-                {/* Admin Note Display for Escalated Queue Items */}
-                {isEscalatedQueue && video.adminNotes && !isActionSelected && (
-                    <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg text-sm text-orange-800 dark:text-orange-200 flex justify-between items-start">
-                        <div>
-                            <span className="font-bold block mb-1 flex items-center gap-1"><AlertTriangle size={12}/> Admin Note:</span> 
-                            {video.adminNotes}
-                        </div>
-                        <button 
-                            onClick={() => { setSelectedReviewId(video.id); setReviewAction('update_note'); setEscalationNote(video.adminNotes || ""); }}
-                            className="p-1 hover:bg-orange-200 rounded text-orange-600"
-                        >
-                            <Edit3 size={16} />
-                        </button>
+                {/* Escalation Context Display */}
+                {isEscalatedQueue && !isActionSelected && (
+                    <div className="mb-4 space-y-2">
+                        {video.adminNotes && (
+                            <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg text-sm text-orange-800 dark:text-orange-200 flex justify-between items-start">
+                                <div>
+                                    <span className="font-bold block mb-1 flex items-center gap-1"><AlertTriangle size={12}/> Admin Note:</span> 
+                                    {video.adminNotes}
+                                </div>
+                                <button 
+                                    onClick={() => { setSelectedReviewId(video.id); setReviewAction('update_note'); setEscalationNote(video.adminNotes || ""); }}
+                                    className="p-1 hover:bg-orange-200 rounded text-orange-600"
+                                >
+                                    <Edit3 size={16} />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -509,17 +551,18 @@ export const AdminView = ({
                                         </div>
                                         <span className="text-xs text-slate-400">{formatDate(request.createdAt)}</span>
                                     </div>
-                                    {request.appealReason ? (
-                                        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800/50 text-sm text-orange-800 dark:text-orange-200">
-                                            <span className="font-bold block mb-1">Appeal Reason:</span>
-                                            "{request.appealReason}"
-                                        </div>
-                                    ) : request.motivation ? (
+                                    {request.motivation && (
                                         <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300">
                                             <span className="font-bold block mb-1">Application Message:</span>
                                             "{request.motivation}"
                                         </div>
-                                    ) : null}
+                                    )}
+                                    {request.appealReason && (
+                                        <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800/50 text-sm text-orange-800 dark:text-orange-200">
+                                            <span className="font-bold block mb-1">Appeal Reason:</span>
+                                            "{request.appealReason}"
+                                        </div>
+                                    )}
                                     <div className="flex gap-4 pt-2">
                                         <button 
                                             onClick={() => handleAdminRequestVerdict(request.id, 'approved')}
@@ -602,6 +645,7 @@ export const AdminView = ({
                                             <div className={`px-2 py-1 rounded text-xs font-bold uppercase ${
                                                 video.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 
                                                 video.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                                                video.status === 'removed' ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' :
                                                 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
                                             }`}>
                                                 {video.status.replace('_', ' ')}
@@ -805,7 +849,8 @@ export const AdminView = ({
                                                     onClick={() => {
                                                         let currentLogs = [...moderationLogs];
                                                         if (reportedVideo) {
-                                                            const { updatedVideo, logEntry } = dismissReportForVideo(reportedVideo, user);
+                                                            const { updatedVideo, logEntry } = dismissAllReportsForVideo(reportedVideo, user);
+                                                            // TODO: Replace with API call to POST /api/moderation/dismiss-reports
                                                             setVideos(prev => prev.map(v => v.id === reportedVideo.id ? updatedVideo : v));
                                                             currentLogs = [logEntry, ...currentLogs];
                                                         }
@@ -815,33 +860,13 @@ export const AdminView = ({
                                                     }}
                                                     className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 py-2 rounded-lg font-bold hover:bg-slate-50 dark:hover:bg-slate-700 text-sm transition-colors"
                                                 >
-                                                    Dismiss Report
+                                                    Dismiss All Reports
                                                 </button>
                                                 <button 
                                                     onClick={() => {
-                                                        let currentLogs = [...moderationLogs];
                                                         if (reportedVideo) {
-                                                            const { updatedVideo, logEntry } = applyModerationVerdict(
-                                                                reportedVideo,
-                                                                'removed',
-                                                                user,
-                                                                undefined, // reviewNote
-                                                                undefined  // adminNotes
-                                                            );
-                                                            setVideos(prev => prev.map(v => v.id === reportedVideo.id ? updatedVideo : v));
-                                                            currentLogs = [logEntry, ...currentLogs];
+                                                            handleVerdict(reportedVideo.id, 'removed');
                                                         }
-                                                        const updatedReports = reports.map(r => r.submissionId === report.submissionId ? { ...r, status: 'resolved', actionTaken: 'Video removed', handledBy: user.id, handledAt: new Date().toISOString() } : r);
-                                                        setReports(updatedReports as ReportType[]);
-                                                        const reportLog: ModerationLogType = {
-                                                            id: `log-${Date.now()}-report`,
-                                                            actorId: user.id,
-                                                            action: 'resolve_report',
-                                                            targetType: 'report',
-                                                            targetId: report.id,
-                                                            timestamp: new Date().toISOString()
-                                                        };
-                                                        setModerationLogs([reportLog, ...currentLogs]);
                                                     }}
                                                     className="flex-1 bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 text-sm transition-colors"
                                                 >

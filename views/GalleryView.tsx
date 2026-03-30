@@ -9,7 +9,7 @@ export const GalleryView = ({ videos, onVideoClick, navigate, user }: { videos: 
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const categories = ["All", "Study Tips", "Mental Health", "Productivity", "Motivation", "Exam Prep"];
+  const categories = ["All", "Study Tips", "Mental Health", "Productivity", "Motivation", "Time Management", "College Prep"];
 
   // Filter and Sort logic
   const filteredAndSortedVideos = useMemo(() => {
@@ -18,8 +18,9 @@ export const GalleryView = ({ videos, onVideoClick, navigate, user }: { videos: 
       
       // Filter by Category or Tags
       if (filter !== "All") {
-          const matchesCategory = v.category === filter;
-          const matchesTags = v.tags ? v.tags.includes(filter) : false;
+          const lowerFilter = filter.toLowerCase();
+          const matchesCategory = v.category?.toLowerCase() === lowerFilter;
+          const matchesTags = v.tags ? v.tags.some(tag => tag.toLowerCase() === lowerFilter) : false;
           
           if (!matchesCategory && !matchesTags) return false;
       }

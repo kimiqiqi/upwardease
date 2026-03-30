@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, PlayCircle, Star, Heart, Send, User, Share2, ThumbsUp, Flag, AlertTriangle, X, CheckCircle2, HelpCircle, ShieldAlert, Lightbulb, Link as LinkIcon, Facebook, Twitter, Lock, FileText } from "lucide-react";
+import { ArrowLeft, PlayCircle, Star, Heart, Send, User, Share2, ThumbsUp, Flag, AlertTriangle, X, CheckCircle2, HelpCircle, ShieldAlert, Lightbulb, Link as LinkIcon, Facebook, Twitter, Lock, FileText, Sparkles } from "lucide-react";
 import { VideoType, UserType, CommentType, ReportType, ModerationLogType, TabType } from "../types";
 import { FadeIn } from "../components/FadeIn";
 import { getYouTubeEmbedUrl } from "../utils/youtube";
@@ -86,6 +86,7 @@ export const VideoDetailView = ({
         const likedBy = v.likedBy || [];
         const currentlyLiked = likedBy.includes(user.id);
         
+        // TODO: Replace with API call to POST /api/videos/:id/like or DELETE /api/videos/:id/like
         if (currentlyLiked) {
             return { 
                 ...v, 
@@ -121,6 +122,7 @@ export const VideoDetailView = ({
               const likedBy = c.likedBy || [];
               const currentlyLiked = likedBy.includes(user.id);
               
+              // TODO: Replace with API call to POST /api/comments/:id/like or DELETE /api/comments/:id/like
               if (currentlyLiked) {
                   return {
                       ...c,
@@ -148,6 +150,8 @@ export const VideoDetailView = ({
           navigate("login");
           return;
       }
+      
+      // TODO: Replace with API call to POST /api/users/:id/star or DELETE /api/users/:id/star
       if (isStarred) {
           setStarredVideoIds((prev: number[]) => prev.filter(id => id !== video.id));
       } else {
@@ -210,9 +214,11 @@ export const VideoDetailView = ({
               reason: reportReason,
               status: 'open'
           };
+          // TODO: Replace with API call to POST /api/reports
           setReports((prev: ReportType[]) => [...prev, newReport]);
       }
 
+      // TODO: Replace with API call to POST /api/videos/:id/report
       setVideos((prev: VideoType[]) => prev.map(v => {
           if (v.id === video.id) {
               return {
@@ -245,17 +251,30 @@ export const VideoDetailView = ({
       if (setModerationLogs) {
           setModerationLogs((prev: ModerationLogType[]) => [logEntry, ...prev]);
       }
+
+      if (setReports && reports) {
+          const openReports = reports.filter(r => r.submissionId === video.id && r.status === 'open');
+          if (openReports.length > 0) {
+              setReports((prev: ReportType[]) => prev.map(r => 
+                  r.submissionId === video.id && r.status === 'open' 
+                  ? { ...r, status: 'resolved' as const, handledBy: user.id, handledAt: new Date().toISOString() } 
+                  : r
+              ));
+          }
+      }
       
       // Navigate back to admin dashboard after decision
       navigate('admin');
   };
 
   const handleUpdateNotes = () => {
+      const noteToSave = internalNote.trim() ? internalNote.trim() : 'Escalated from Video Detail';
       setVideos((prev: VideoType[]) => prev.map(v => {
           if (v.id === video.id) {
               return { 
                   ...v, 
-                  adminNotes: internalNote
+                  adminNotes: noteToSave,
+                  isEscalated: true
               };
           }
           return v;
@@ -265,7 +284,7 @@ export const VideoDetailView = ({
           const newLog: ModerationLogType = {
               id: `log-${Date.now()}`,
               actorId: user.id,
-              action: 'update_note',
+              action: 'escalate',
               targetType: 'video',
               targetId: video.id,
               timestamp: new Date().toISOString()
@@ -273,6 +292,7 @@ export const VideoDetailView = ({
           setModerationLogs((prev: ModerationLogType[]) => [newLog, ...prev]);
       }
       
+      alert("Video escalated for review.");
       // Navigate back to admin dashboard after decision
       navigate('admin');
   };
@@ -296,6 +316,7 @@ export const VideoDetailView = ({
         likedBy: []
     };
 
+    // TODO: Replace with API call to POST /api/videos/:id/comments
     setVideos((prev: VideoType[]) => prev.map(v => {
         if (v.id === video.id) {
             return { ...v, comments: [newComment, ...(v.comments || [])] };
@@ -644,22 +665,17 @@ export const VideoDetailView = ({
                            <>
                                <button 
                                    onClick={() => {
-                                       if (window.confirm("Are you sure you want to delete this video?")) {
-                                           setVideos((prev: VideoType[]) => prev.filter(v => v.id !== video.id));
-                                           navigate("gallery");
+                                       if (window.confirm("Are you sure you want to remove this video? It will be hidden from the gallery but kept in history.")) {
+                                           handleAdminVerdict('removed');
                                        }
                                    }}
                                    className="p-2.5 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                   title="Delete Video"
+                                   title="Remove Video"
                                >
                                    <X size={20} />
                                </button>
                                <button 
-                                   onClick={() => {
-                                       setVideos((prev: VideoType[]) => prev.map(v => v.id === video.id ? { ...v, adminNotes: 'Escalated from Video Detail', isEscalated: true } : v));
-                                       alert("Video escalated for review.");
-                                       navigate("admin");
-                                   }}
+                                   onClick={handleUpdateNotes}
                                    className="p-2.5 rounded-full text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
                                    title="Escalate (Needs Review)"
                                >
@@ -699,6 +715,40 @@ export const VideoDetailView = ({
                     <p className="mt-4 text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
                         {video.description}
                     </p>
+                )}
+
+                {(video.actionStep || video.resourceLink) && (
+                    <div className="mt-6 bg-eggplant/5 dark:bg-teal-900/10 p-5 rounded-2xl border border-eggplant/10 dark:border-teal-900/30">
+                        <h4 className="font-bold text-eggplant dark:text-teal-400 mb-4 flex items-center gap-2">
+                            <Sparkles size={18} /> Take Action
+                        </h4>
+                        <div className="space-y-4">
+                            {video.actionStep && (
+                                <div className="flex gap-3">
+                                    <div className="mt-0.5 bg-eggplant/10 dark:bg-teal-900/30 p-1.5 rounded-lg text-eggplant dark:text-teal-400 h-fit">
+                                        <CheckCircle2 size={16} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">Suggested Step</p>
+                                        <p className="text-sm text-slate-600 dark:text-slate-300">{video.actionStep}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {video.resourceLink && (
+                                <div className="flex gap-3">
+                                    <div className="mt-0.5 bg-eggplant/10 dark:bg-teal-900/30 p-1.5 rounded-lg text-eggplant dark:text-teal-400 h-fit">
+                                        <LinkIcon size={16} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">Helpful Resource</p>
+                                        <a href={video.resourceLink.startsWith('http') ? video.resourceLink : `https://${video.resourceLink}`} target="_blank" rel="noopener noreferrer" className="text-sm text-eggplant dark:text-teal-400 hover:underline break-all">
+                                            {video.resourceLink}
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )}
              </FadeIn>
 

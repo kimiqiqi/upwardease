@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Plus, AlertCircle, PlayCircle, RotateCcw, Send, GraduationCap, School, MapPin, Settings, X, Save, User, ArrowDown, Loader2, Quote, Bell, Mail, Lock, Trophy, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Plus, AlertCircle, PlayCircle, RotateCcw, Send, GraduationCap, School, MapPin, Settings, X, Save, User, ArrowDown, Loader2, Quote, Bell, Mail, Lock, Trophy, ShieldAlert, CheckCircle2, Phone, Calendar } from "lucide-react";
 import { UserType, VideoType, AdminRequestType, TabType } from "../types";
 import { FadeIn } from "../components/FadeIn";
 
@@ -42,7 +42,7 @@ const VideoList = ({
                             <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold uppercase ${
                                 video.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
                                 video.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                                video.status === 'removed' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                                video.status === 'removed' ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' :
                                 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                             }`}>
                                 {video.status.replace('_', ' ')}
@@ -54,18 +54,18 @@ const VideoList = ({
                         <p className="text-xs text-slate-500">{video.views} views</p>
                         
                         {showStatus && (video.status === 'rejected' || video.status === 'removed') && (
-                            <div className={`mt-4 p-3 rounded-lg border text-xs ${video.status === 'removed' ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-900' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900'}`}>
-                                <p className={`font-bold mb-1 ${video.status === 'removed' ? 'text-orange-800 dark:text-orange-400' : 'text-red-800 dark:text-red-400'}`}>Admin Feedback:</p>
-                                <p className={`mb-3 ${video.status === 'removed' ? 'text-orange-700 dark:text-orange-300' : 'text-red-700 dark:text-red-300'}`}>{video.reviewNote || "No feedback provided."}</p>
+                            <div className={`mt-4 p-3 rounded-lg border text-xs ${video.status === 'removed' ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900'}`}>
+                                <p className={`font-bold mb-1 ${video.status === 'removed' ? 'text-slate-800 dark:text-slate-300' : 'text-red-800 dark:text-red-400'}`}>Admin Feedback:</p>
+                                <p className={`mb-3 ${video.status === 'removed' ? 'text-slate-700 dark:text-slate-400' : 'text-red-700 dark:text-red-300'}`}>{video.reviewNote || "No feedback provided."}</p>
                                 
                                 {video.appealReason ? (
-                                    <div className={`w-full py-2 bg-slate-100 dark:bg-slate-800 border rounded font-bold text-center flex items-center justify-center gap-2 ${video.status === 'removed' ? 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400'}`}>
+                                    <div className={`w-full py-2 bg-slate-100 dark:bg-slate-800 border rounded font-bold text-center flex items-center justify-center gap-2 ${video.status === 'removed' ? 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400'}`}>
                                         <CheckCircle2 size={14}/> Appeal Submitted
                                     </div>
                                 ) : appealingVideoId === video.id ? (
                                     <div className="mt-2 animate-in fade-in">
                                         <textarea 
-                                            className={`w-full p-2 rounded border mb-2 dark:bg-slate-800 dark:text-white ${video.status === 'removed' ? 'border-orange-200 dark:border-orange-800' : 'border-red-200 dark:border-red-800'}`}
+                                            className={`w-full p-2 rounded border mb-2 dark:bg-slate-800 dark:text-white ${video.status === 'removed' ? 'border-slate-200 dark:border-slate-700' : 'border-red-200 dark:border-red-800'}`}
                                             placeholder="Why should this be reconsidered?"
                                             rows={2}
                                             value={appealReason}
@@ -75,13 +75,13 @@ const VideoList = ({
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={() => handleAppeal(video.id)}
-                                                className={`text-white px-3 py-1 rounded w-full flex items-center justify-center gap-1 ${video.status === 'removed' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-red-600 hover:bg-red-700'}`}
+                                                className={`text-white px-3 py-1 rounded w-full flex items-center justify-center gap-1 ${video.status === 'removed' ? 'bg-slate-600 hover:bg-slate-700' : 'bg-red-600 hover:bg-red-700'}`}
                                             >
                                                 <Send size={12}/> Submit
                                             </button>
                                             <button 
                                                 onClick={() => { setAppealingVideoId(null); setAppealReason(""); }}
-                                                className={`px-3 py-1 rounded w-full border bg-white dark:bg-slate-800 ${video.status === 'removed' ? 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30'}`}
+                                                className={`px-3 py-1 rounded w-full border bg-white dark:bg-slate-800 ${video.status === 'removed' ? 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30'}`}
                                             >
                                                 Cancel
                                             </button>
@@ -90,7 +90,7 @@ const VideoList = ({
                                 ) : (
                                     <button 
                                         onClick={() => setAppealingVideoId(video.id)}
-                                        className={`w-full py-2 bg-white dark:bg-slate-800 border rounded font-bold transition-colors flex items-center justify-center gap-2 ${video.status === 'removed' ? 'border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30'}`}
+                                        className={`w-full py-2 bg-white dark:bg-slate-800 border rounded font-bold transition-colors flex items-center justify-center gap-2 ${video.status === 'removed' ? 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700' : 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30'}`}
                                     >
                                         <RotateCcw size={14}/> Appeal Decision
                                     </button>
@@ -454,10 +454,10 @@ export const ProfileView = ({
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500 text-sm">
                                     <span className="font-bold text-eggplant dark:text-teal-300">{user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Admin / Volunteer' : 'Student Member'}</span>
                                     {user.email && <span className="flex items-center gap-1"><Mail size={14}/> {user.email}</span>}
-                                    {user.phone && <span className="flex items-center gap-1"><Mail size={14}/> {user.phone}</span>}
+                                    {user.phone && <span className="flex items-center gap-1"><Phone size={14}/> {user.phone}</span>}
                                     {user.grade && <span className="flex items-center gap-1"><GraduationCap size={14}/> {user.grade}</span>}
                                     {user.school && <span className="flex items-center gap-1"><School size={14}/> {user.school}</span>}
-                                    {user.age && <span className="flex items-center gap-1"><MapPin size={14}/> {user.age} y/o</span>}
+                                    {user.age && <span className="flex items-center gap-1"><Calendar size={14}/> {user.age} y/o</span>}
                                 </div>
                             </div>
                             
@@ -521,7 +521,7 @@ export const ProfileView = ({
                                         onClick={() => setIsApplyingForAdmin(true)}
                                         className="bg-eggplant text-white px-4 py-2 rounded-lg font-bold hover:bg-eggplant-dark transition-colors text-sm"
                                     >
-                                        {myAdminRequest?.status === 'rejected' ? 'Appeal Decision' : 'Apply Now'}
+                                        {myAdminRequest?.status === 'rejected' ? 'Apply Again' : 'Apply Now'}
                                     </button>
                                 ) : (
                                     <form onSubmit={handleApplyForAdmin} className="space-y-3 animate-in fade-in">
@@ -538,7 +538,7 @@ export const ProfileView = ({
                                                 type="submit"
                                                 className="bg-eggplant text-white px-4 py-2 rounded-lg font-bold hover:bg-eggplant-dark transition-colors text-sm"
                                             >
-                                                {myAdminRequest?.status === 'rejected' ? 'Submit Appeal' : 'Submit Application'}
+                                                Submit Application
                                             </button>
                                             <button 
                                                 type="button"

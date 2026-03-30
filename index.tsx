@@ -110,10 +110,25 @@ const App = () => {
         const seedUsers: NonNullable<UserType>[] = [
           { id: "user-super", name: "Super Admin", email: "super@upwardease.org", role: "superadmin", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
           { id: "user-admin", name: "Admin Volunteer", email: "admin@upwardease.org", role: "admin", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
-          { id: "user-student", name: "Alex Student", email: "student@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() }
+          { id: "user-student", name: "Alex Student", email: "student@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
+          { id: "user-sarah", name: "Sarah J.", email: "sarah@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
+          { id: "user-marcus", name: "Marcus T.", email: "marcus@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
+          { id: "user-emily", name: "Emily R.", email: "emily@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
+          { id: "user-123", name: "Alex K.", email: "alexk@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
+          { id: "user-jordan", name: "Jordan P.", email: "jordan@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
+          { id: "user-lisa", name: "Lisa M.", email: "lisa@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
+          { id: "user-new", name: "New User", email: "new@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() },
+          { id: "user-sam", name: "Sam D.", email: "sam@example.com", role: "user", passwordHash: defaultPasswordHash, createdAt: new Date().toISOString() }
         ];
         setUsers(seedUsers);
         setVideos(INITIAL_VIDEOS);
+        setReports([{
+          id: "report-1",
+          submissionId: 9, // The ID of the reported video
+          reportedBy: "user-student",
+          reason: "Promotes unhealthy study habits",
+          status: "open"
+        }]);
       }
       setIsLoaded(true);
     };
@@ -160,8 +175,8 @@ const App = () => {
     const targetUser = users.find(u => u.id === targetUserId);
     if (!targetUser) return;
     
-    // Respect user notification preferences
-    if (targetUser.preferences?.notifications === false) return;
+    // Respect user notification preferences, but system notifications bypass this
+    if (type !== 'system' && targetUser.preferences?.notifications === false) return;
 
     const newNotification = {
       id: `notif-${Date.now()}`,
@@ -182,6 +197,8 @@ const App = () => {
       return u;
     }));
 
+    // System notifications might also bypass email preferences depending on severity, 
+    // but for now we'll respect the emailUpdates flag for all types.
     if (targetUser.preferences?.emailUpdates) {
       console.log(`[SIMULATED EMAIL SENT to ${targetUser.email || 'user'}]: ${message}`);
       // In a real app, this would trigger a backend email service
@@ -303,7 +320,7 @@ const App = () => {
             /> : 
             <GalleryView videos={videos} onVideoClick={handleVideoClick} navigate={handleNavigate} user={user} />;
       case "contact": return <ContactView user={user} setContactMessages={setContactMessages} />;
-      case "admin": return <AdminView user={user} navigate={handleNavigate} videos={videos} setVideos={setVideos} onVideoClick={handleVideoClick} adminRequests={adminRequests} setAdminRequests={setAdminRequests} users={users} setUsers={setUsers} setUser={setUser} reports={reports} setReports={setReports} moderationLogs={moderationLogs} setModerationLogs={setModerationLogs} contactMessages={contactMessages} setContactMessages={setContactMessages} />;
+      case "admin": return <AdminView user={user} navigate={handleNavigate} videos={videos} setVideos={setVideos} onVideoClick={handleVideoClick} adminRequests={adminRequests} setAdminRequests={setAdminRequests} users={users} setUsers={setUsers} setUser={setUser} reports={reports} setReports={setReports} moderationLogs={moderationLogs} setModerationLogs={setModerationLogs} contactMessages={contactMessages} setContactMessages={setContactMessages} addNotification={addNotification} />;
       case "profile": return <ProfileView user={user} setUser={setUser} videos={videos} setVideos={setVideos} starredVideoIds={starredVideoIds} historyVideoIds={historyVideoIds} onVideoClick={handleVideoClick} navigate={handleNavigate} adminRequests={adminRequests} setAdminRequests={setAdminRequests} />;
       case "login": return <LoginView onAuthSubmit={handleAuthSubmit} navigate={handleNavigate} />;
       case "about": return <AboutView />;
